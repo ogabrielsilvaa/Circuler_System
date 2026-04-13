@@ -1,0 +1,18 @@
+version: '3.8'
+name: circuler
+
+services:
+  mysql-db:
+    image: mysql:8.0
+    container_name: circuler-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: circuler
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: adminpassword
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./database/data:/var/lib/mysql
+      - ./database/init:/docker-entrypoint-initdb.d
