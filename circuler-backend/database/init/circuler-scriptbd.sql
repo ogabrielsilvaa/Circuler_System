@@ -42,6 +42,9 @@ CREATE TABLE IF NOT EXISTS `circuler`.`roles` (
   PRIMARY KEY (`id`))
 ENGINE = InnoDB;
 
+INSERT INTO roles (name) VALUES ('ROLE_ADMIN');
+INSERT INTO roles (name) VALUES ('ROLE_USER');
+
 
 -- -----------------------------------------------------
 -- Table `circuler`.`role_users`
