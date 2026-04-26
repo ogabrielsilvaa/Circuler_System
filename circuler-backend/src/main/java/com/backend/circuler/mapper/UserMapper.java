@@ -6,6 +6,9 @@ import com.backend.circuler.entity.User;
 import com.backend.circuler.enums.UserStatus;
 import org.springframework.stereotype.Component;
 
+import java.util.Set;
+import java.util.stream.Collectors;
+
 @Component
 public class UserMapper {
 
@@ -19,11 +22,16 @@ public class UserMapper {
     }
 
     public UserResponseDTO toDto(User entity) {
+        Set<String> roleNames = entity.getRoles().stream()
+                .map(role -> role.getName())
+                .collect(Collectors.toSet());
+
         return new UserResponseDTO(
                 entity.getId(),
                 entity.getName(),
                 entity.getEmail(),
-                entity.getStatus()
+                entity.getStatus(),
+                roleNames
         );
     }
 }
