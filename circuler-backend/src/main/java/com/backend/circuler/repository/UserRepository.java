@@ -14,6 +14,8 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
     Optional<User> findByEmail(String email);
 
+    Optional<User> findByEmailAndStatusNot(String email, UserStatus status);
+
     Optional<User> findByIdAndStatusNot(Integer id, UserStatus status);
 
     List<User> findAllByStatusNot(UserStatus status);
@@ -21,6 +23,6 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     List<User> findAll();
 
     @Modifying
-    @Query("UPDATE User u SET u.status = :statusInativo WHERE u.id = :userId")
-    void logicalDeleteById(@Param("id") Integer id);
+    @Query("UPDATE User u SET u.status = :status WHERE u.id = :id")
+    void logicalDeleteById(@Param("id") Integer id, @Param("status") UserStatus status);
 }
