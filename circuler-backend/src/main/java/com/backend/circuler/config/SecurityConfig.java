@@ -43,6 +43,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/books/**").authenticated()
                         .requestMatchers("/api/books/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/collection-points/**").authenticated()
+                        .requestMatchers("/api/collection-points/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
