@@ -62,6 +62,10 @@ The API uses stateless JWT Bearer authentication.
 | `/swagger-ui/**`, `/v3/api-docs/**` | Public |
 | `GET/PATCH/DELETE /api/users/**` | Authenticated (any role) |
 | `POST /api/admin/**` | `ROLE_ADMIN` only |
+| `GET /api/books/**` | Authenticated (any role) |
+| `POST/PATCH/DELETE /api/books/**` | `ROLE_ADMIN` only |
+| `GET /api/collection-points/**` | Authenticated (any role) |
+| `POST/PATCH/DELETE /api/collection-points/**` | `ROLE_ADMIN` only |
 
 ## Critical Conventions
 
@@ -79,10 +83,26 @@ The API uses stateless JWT Bearer authentication.
 
 **Error messages in Portuguese.** Domain-level exception messages should be in Portuguese.
 
+**Repository derived query naming.** Spring Data property traversal through associations uses camelCase, not underscore notation. Use `existsByUserAdminIdAndStatusNot` (not `existsByUserAdmin_IdAndStatusNot`) for traversing the `userAdmin.id` path.
+
+## Business Rules
+
+### CollectionPoints
+
+**Creation is restricted to the root admin.** The root admin is identified by having exactly one role (`roles.size() == 1`). Promoted admins have two roles (`ROLE_USER` + `ROLE_ADMIN`) and cannot create collection points. This check is done in `CollectionPointService.create()` via `SecurityContextHolder`.
+
+**The assigned admin must have `ROLE_ADMIN`.** When assigning or changing the responsible user (`userAdminId`), the service validates that the target user has `ROLE_ADMIN` in their roles set.
+
+**One collection point per admin.** A user can be responsible for at most one non-deleted collection point. Enforced via `existsByUserAdminIdAndStatusNot` on create, and `existsByUserAdminIdAndStatusNotAndIdNot` on update (excluding the current point from the uniqueness check).
+
 ## Database Tables (defined in `database/init/circuler-scriptbd.sql`)
 
 `users`, `roles`, `role_users`, `books`, `book_instances`, `collection_points`, `reservations`
 
-**Implemented:** `users` (full CRUD + logical delete), `roles` and `role_users` (read-only via `RoleRepository`; seeded by SQL script with `ROLE_ADMIN` and `ROLE_USER`).
+**Implemented:**
+- `users` — full CRUD + logical delete; statuses: `APAGADO(0)`, `ATIVO(1)`, `INATIVO(2)`
+- `roles` and `role_users` — read-only via `RoleRepository`; seeded with `ROLE_ADMIN` and `ROLE_USER`
+- `books` — full CRUD + logical delete (ADMIN write, authenticated read); statuses: `APAGADO(0)`, `ATIVO(1)`; categories: `INFANTIL_JUVENIL(1)`, `AUTOAJUDA(2)`, `DIDATICO(3)`, `ESCOLAR(4)`. Note: `status INT NOT NULL DEFAULT 1` was added to the SQL init script.
+- `collection_points` — full CRUD + logical delete (root ADMIN create, ADMIN write, authenticated read); statuses: `APAGADO(0)`, `ATIVO(1)`, `LOTADO(2)`, `INATIVO(3)`; @ManyToOne with `users` (EAGER); ResponseDTO exposes `userAdminId`, `userAdminName`, `userAdminEmail`
 
-**Not yet implemented:** `books`, `book_instances`, `collection_points`, `reservations` — tables exist in the schema but have no entity/service/repository yet.
+**Not yet implemented:** `book_instances`, `reservations` — tables exist in the schema but have no entity/service/repository yet.
