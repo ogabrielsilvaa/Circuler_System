@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/admin")
-@Tag(name = "Administração", description = "Endpoints exclusivos para administradores.")
+@Tag(name = "Administração", description = "Endpoints exclusivos para administrador raiz.")
 public class AdminController {
 
     private final UserService userService;

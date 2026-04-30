@@ -61,11 +61,17 @@ The API uses stateless JWT Bearer authentication.
 | `POST /api/users` | Public (registration) |
 | `/swagger-ui/**`, `/v3/api-docs/**` | Public |
 | `GET/PATCH/DELETE /api/users/**` | Authenticated (any role) |
-| `POST /api/admin/**` | `ROLE_ADMIN` only |
+| `POST /api/admin/**` | `ROLE_ROOT_ADMIN` only |
 | `GET /api/books/**` | Authenticated (any role) |
 | `POST/PATCH/DELETE /api/books/**` | `ROLE_ADMIN` only |
 | `GET /api/collection-points/**` | Authenticated (any role) |
+| `GET /api/collection-points/{id}/books` | Authenticated — returns point + books list (`CollectionPointDetailDTO`) |
 | `POST/PATCH/DELETE /api/collection-points/**` | `ROLE_ADMIN` only |
+| `GET /api/book-instances` | Authenticated (any role) |
+| `GET /api/book-instances/{id}` | Authenticated (any role) |
+| `POST /api/book-instances/point/{pointId}` | `ROLE_ROOT_ADMIN` only |
+| `POST /api/book-instances/my-point` | `ROLE_ADMIN` only |
+| `PATCH/DELETE /api/book-instances/{id}` | `ROLE_ADMIN` only (ownership check in service) |
 
 ## Critical Conventions
 
@@ -79,7 +85,7 @@ The API uses stateless JWT Bearer authentication.
 
 **Password encoding.** All passwords are encoded with BCrypt via `PasswordEncoder`. Never store plain-text passwords. Encoding happens in `UserService`, not in the mapper.
 
-**Role assignment.** New users created via `POST /api/users` receive `ROLE_USER` automatically. Promotion to `ROLE_ADMIN` is done via `POST /api/admin/users/{id}/promote` (ADMIN only). The `DaoAuthenticationProvider` constructor in Spring Security 7.x (Spring Boot 4.x) requires `UserDetailsService` as a constructor argument — `setUserDetailsService()` was removed.
+**Role assignment.** New users created via `POST /api/users` receive `ROLE_USER` automatically. Promotion to `ROLE_ADMIN` is done via `POST /api/admin/users/{id}/promote` (`ROLE_ROOT_ADMIN` only). The root admin (seeded by `AdminDataSeeder`) holds `ROLE_ROOT_ADMIN` + `ROLE_ADMIN`. The `DaoAuthenticationProvider` constructor in Spring Security 7.x (Spring Boot 4.x) requires `UserDetailsService` as a constructor argument — `setUserDetailsService()` was removed.
 
 **Error messages in Portuguese.** Domain-level exception messages should be in Portuguese.
 
@@ -89,7 +95,7 @@ The API uses stateless JWT Bearer authentication.
 
 ### CollectionPoints
 
-**Creation is restricted to the root admin.** The root admin is identified by having exactly one role (`roles.size() == 1`). Promoted admins have two roles (`ROLE_USER` + `ROLE_ADMIN`) and cannot create collection points. This check is done in `CollectionPointService.create()` via `SecurityContextHolder`.
+**Creation is restricted to the root admin.** The root admin is identified by having `ROLE_ROOT_ADMIN` in their roles set. Promoted admins have only `ROLE_USER` + `ROLE_ADMIN` and cannot create collection points. This check is done in `CollectionPointService.create()` via `SecurityContextHolder`.
 
 **The assigned admin must have `ROLE_ADMIN`.** When assigning or changing the responsible user (`userAdminId`), the service validates that the target user has `ROLE_ADMIN` in their roles set.
 
@@ -101,8 +107,10 @@ The API uses stateless JWT Bearer authentication.
 
 **Implemented:**
 - `users` — full CRUD + logical delete; statuses: `APAGADO(0)`, `ATIVO(1)`, `INATIVO(2)`
-- `roles` and `role_users` — read-only via `RoleRepository`; seeded with `ROLE_ADMIN` and `ROLE_USER`
+- `roles` and `role_users` — read-only via `RoleRepository`; seeded with `ROLE_ADMIN`, `ROLE_USER`, and `ROLE_ROOT_ADMIN`
 - `books` — full CRUD + logical delete (ADMIN write, authenticated read); statuses: `APAGADO(0)`, `ATIVO(1)`; categories: `INFANTIL_JUVENIL(1)`, `AUTOAJUDA(2)`, `DIDATICO(3)`, `ESCOLAR(4)`. Note: `status INT NOT NULL DEFAULT 1` was added to the SQL init script.
 - `collection_points` — full CRUD + logical delete (root ADMIN create, ADMIN write, authenticated read); statuses: `APAGADO(0)`, `ATIVO(1)`, `LOTADO(2)`, `INATIVO(3)`; @ManyToOne with `users` (EAGER); ResponseDTO exposes `userAdminId`, `userAdminName`, `userAdminEmail`
 
-**Not yet implemented:** `book_instances`, `reservations` — tables exist in the schema but have no entity/service/repository yet.
+- `book_instances` — full CRUD + logical delete; statuses: `APAGADO(0)`, `DISPONIVEL(1)`, `RESERVADO(2)`, `RETIRADO(3)`; @ManyToOne to Book (EAGER), CollectionPoint (EAGER) and User/donor (EAGER, nullable); two create endpoints: `POST /point/{pointId}` (ROOT_ADMIN, any point) and `POST /my-point` (ADMIN, auto-resolves their point via JWT email); ownership check in PATCH/DELETE (ROOT_ADMIN bypasses, ADMIN restricted to their point); `GET /api/collection-points/{id}/books` returns `CollectionPointDetailDTO` (point fields + `List<CollectionPointBookDTO>` with id, bookId, bookTitle, bookAuthor, bookCategory, status, userDonorId, userDonorName)
+
+**Not yet implemented:** `reservations` — table exists in the schema but has no entity/service/repository yet.
