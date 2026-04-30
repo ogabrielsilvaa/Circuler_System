@@ -1,13 +1,18 @@
 package com.backend.circuler.service;
 
+import com.backend.circuler.dto.collectionpoint.CollectionPointBookDTO;
 import com.backend.circuler.dto.collectionpoint.CollectionPointCreateDTO;
+import com.backend.circuler.dto.collectionpoint.CollectionPointDetailDTO;
 import com.backend.circuler.dto.collectionpoint.CollectionPointResponseDTO;
 import com.backend.circuler.dto.collectionpoint.CollectionPointUpdateDTO;
 import com.backend.circuler.entity.CollectionPoint;
 import com.backend.circuler.entity.User;
+import com.backend.circuler.enums.BookInstanceStatus;
 import com.backend.circuler.enums.CollectionPointStatus;
 import com.backend.circuler.enums.UserStatus;
+import com.backend.circuler.mapper.BookInstanceMapper;
 import com.backend.circuler.mapper.CollectionPointMapper;
+import com.backend.circuler.repository.BookInstanceRepository;
 import com.backend.circuler.repository.CollectionPointRepository;
 import com.backend.circuler.repository.UserRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,13 +28,19 @@ public class CollectionPointService {
     private final CollectionPointRepository repository;
     private final CollectionPointMapper mapper;
     private final UserRepository userRepository;
+    private final BookInstanceRepository bookInstanceRepository;
+    private final BookInstanceMapper bookInstanceMapper;
 
     public CollectionPointService(CollectionPointRepository repository,
                                   CollectionPointMapper mapper,
-                                  UserRepository userRepository) {
+                                  UserRepository userRepository,
+                                  BookInstanceRepository bookInstanceRepository,
+                                  BookInstanceMapper bookInstanceMapper) {
         this.repository = repository;
         this.mapper = mapper;
         this.userRepository = userRepository;
+        this.bookInstanceRepository = bookInstanceRepository;
+        this.bookInstanceMapper = bookInstanceMapper;
     }
 
     @Transactional
@@ -38,7 +49,9 @@ public class CollectionPointService {
         User currentUser = userRepository.findByEmailAndStatusNot(currentEmail, UserStatus.APAGADO)
                 .orElseThrow(() -> new RuntimeException("Usuário autenticado não encontrado."));
 
-        if (currentUser.getRoles().size() != 1) {
+        boolean isRootAdmin = currentUser.getRoles().stream()
+                .anyMatch(role -> "ROLE_ROOT_ADMIN".equals(role.getName()));
+        if (!isRootAdmin) {
             throw new RuntimeException("Apenas o administrador raiz pode criar pontos de coleta.");
         }
 
@@ -71,6 +84,32 @@ public class CollectionPointService {
         CollectionPoint point = repository.findByIdAndStatusNot(id, CollectionPointStatus.APAGADO)
                 .orElseThrow(() -> new RuntimeException("Ponto de coleta não encontrado."));
         return mapper.toDto(point);
+    }
+
+    public CollectionPointDetailDTO findByIdWithBooks(Integer id) {
+        CollectionPoint point = repository.findByIdAndStatusNot(id, CollectionPointStatus.APAGADO)
+                .orElseThrow(() -> new RuntimeException("Ponto de coleta não encontrado."));
+
+        List<CollectionPointBookDTO> books = bookInstanceRepository
+                .findAllByCollectionPointIdAndStatusNot(id, BookInstanceStatus.APAGADO)
+                .stream()
+                .map(bookInstanceMapper::toCollectionPointBookDto)
+                .collect(Collectors.toList());
+
+        return new CollectionPointDetailDTO(
+                point.getId(),
+                point.getName(),
+                point.getAddressStreet(),
+                point.getAddressNeighborhood(),
+                point.getCapacityLimit(),
+                point.getStatus(),
+                point.getUserAdmin().getId(),
+                point.getUserAdmin().getName(),
+                point.getUserAdmin().getEmail(),
+                point.getCreatedAt(),
+                point.getUpdatedAt(),
+                books
+        );
     }
 
     @Transactional

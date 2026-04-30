@@ -16,6 +16,8 @@ public interface CollectionPointRepository extends JpaRepository<CollectionPoint
 
     List<CollectionPoint> findAllByStatusNot(CollectionPointStatus status);
 
+    Optional<CollectionPoint> findByUserAdminEmailAndStatusNot(String email, CollectionPointStatus status);
+
     boolean existsByUserAdminIdAndStatusNot(Integer userAdminId, CollectionPointStatus status);
 
     boolean existsByUserAdminIdAndStatusNotAndIdNot(Integer userAdminId, CollectionPointStatus status, Integer id);

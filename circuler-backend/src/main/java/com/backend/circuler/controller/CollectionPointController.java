@@ -1,6 +1,7 @@
 package com.backend.circuler.controller;
 
 import com.backend.circuler.dto.collectionpoint.CollectionPointCreateDTO;
+import com.backend.circuler.dto.collectionpoint.CollectionPointDetailDTO;
 import com.backend.circuler.dto.collectionpoint.CollectionPointResponseDTO;
 import com.backend.circuler.dto.collectionpoint.CollectionPointUpdateDTO;
 import com.backend.circuler.service.CollectionPointService;
@@ -35,6 +36,11 @@ public class CollectionPointController {
     @GetMapping("/{id}")
     public ResponseEntity<CollectionPointResponseDTO> findById(@PathVariable Integer id) {
         return ResponseEntity.ok(service.findById(id));
+    }
+
+    @GetMapping("/{id}/books")
+    public ResponseEntity<CollectionPointDetailDTO> findByIdWithBooks(@PathVariable Integer id) {
+        return ResponseEntity.ok(service.findByIdWithBooks(id));
     }
 
     @PatchMapping("/{id}")
