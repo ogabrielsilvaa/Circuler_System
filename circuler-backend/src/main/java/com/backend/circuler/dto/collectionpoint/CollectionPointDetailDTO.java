@@ -22,6 +22,21 @@ public class CollectionPointDetailDTO {
 
     public CollectionPointDetailDTO() {}
 
+    public CollectionPointDetailDTO(CollectionPointResponseDTO base, List<CollectionPointBookDTO> books) {
+        this.id = base.getId();
+        this.name = base.getName();
+        this.addressStreet = base.getAddressStreet();
+        this.addressNeighborhood = base.getAddressNeighborhood();
+        this.capacityLimit = base.getCapacityLimit();
+        this.status = base.getStatus();
+        this.userAdminId = base.getUserAdminId();
+        this.userAdminName = base.getUserAdminName();
+        this.userAdminEmail = base.getUserAdminEmail();
+        this.createdAt = base.getCreatedAt();
+        this.updatedAt = base.getUpdatedAt();
+        this.books = books;
+    }
+
     public CollectionPointDetailDTO(Integer id, String name, String addressStreet,
                                     String addressNeighborhood, Integer capacityLimit,
                                     CollectionPointStatus status, Integer userAdminId,

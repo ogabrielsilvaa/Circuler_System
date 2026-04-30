@@ -1,16 +1,15 @@
 package com.backend.circuler.service;
 
-import com.backend.circuler.dto.collectionpoint.CollectionPointBookDTO;
 import com.backend.circuler.dto.collectionpoint.CollectionPointCreateDTO;
 import com.backend.circuler.dto.collectionpoint.CollectionPointDetailDTO;
 import com.backend.circuler.dto.collectionpoint.CollectionPointResponseDTO;
 import com.backend.circuler.dto.collectionpoint.CollectionPointUpdateDTO;
+import com.backend.circuler.entity.BookInstance;
 import com.backend.circuler.entity.CollectionPoint;
 import com.backend.circuler.entity.User;
 import com.backend.circuler.enums.BookInstanceStatus;
 import com.backend.circuler.enums.CollectionPointStatus;
 import com.backend.circuler.enums.UserStatus;
-import com.backend.circuler.mapper.BookInstanceMapper;
 import com.backend.circuler.mapper.CollectionPointMapper;
 import com.backend.circuler.repository.BookInstanceRepository;
 import com.backend.circuler.repository.CollectionPointRepository;
@@ -29,18 +28,15 @@ public class CollectionPointService {
     private final CollectionPointMapper mapper;
     private final UserRepository userRepository;
     private final BookInstanceRepository bookInstanceRepository;
-    private final BookInstanceMapper bookInstanceMapper;
 
     public CollectionPointService(CollectionPointRepository repository,
                                   CollectionPointMapper mapper,
                                   UserRepository userRepository,
-                                  BookInstanceRepository bookInstanceRepository,
-                                  BookInstanceMapper bookInstanceMapper) {
+                                  BookInstanceRepository bookInstanceRepository) {
         this.repository = repository;
         this.mapper = mapper;
         this.userRepository = userRepository;
         this.bookInstanceRepository = bookInstanceRepository;
-        this.bookInstanceMapper = bookInstanceMapper;
     }
 
     @Transactional
@@ -90,26 +86,10 @@ public class CollectionPointService {
         CollectionPoint point = repository.findByIdAndStatusNot(id, CollectionPointStatus.APAGADO)
                 .orElseThrow(() -> new RuntimeException("Ponto de coleta não encontrado."));
 
-        List<CollectionPointBookDTO> books = bookInstanceRepository
-                .findAllByCollectionPointIdAndStatusNot(id, BookInstanceStatus.APAGADO)
-                .stream()
-                .map(bookInstanceMapper::toCollectionPointBookDto)
-                .collect(Collectors.toList());
+        List<BookInstance> instances = bookInstanceRepository
+                .findAllByCollectionPointIdAndStatusNot(id, BookInstanceStatus.APAGADO);
 
-        return new CollectionPointDetailDTO(
-                point.getId(),
-                point.getName(),
-                point.getAddressStreet(),
-                point.getAddressNeighborhood(),
-                point.getCapacityLimit(),
-                point.getStatus(),
-                point.getUserAdmin().getId(),
-                point.getUserAdmin().getName(),
-                point.getUserAdmin().getEmail(),
-                point.getCreatedAt(),
-                point.getUpdatedAt(),
-                books
-        );
+        return mapper.toDetailDto(point, instances);
     }
 
     @Transactional

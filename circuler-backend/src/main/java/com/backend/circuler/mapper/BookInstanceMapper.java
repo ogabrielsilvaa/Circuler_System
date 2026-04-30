@@ -1,7 +1,6 @@
 package com.backend.circuler.mapper;
 
 import com.backend.circuler.dto.bookinstance.BookInstanceResponseDTO;
-import com.backend.circuler.dto.collectionpoint.CollectionPointBookDTO;
 import com.backend.circuler.entity.BookInstance;
 import org.springframework.stereotype.Component;
 
@@ -29,19 +28,5 @@ public class BookInstanceMapper {
         );
     }
 
-    public CollectionPointBookDTO toCollectionPointBookDto(BookInstance entity) {
-        Integer donorId = entity.getUserDonor() != null ? entity.getUserDonor().getId() : null;
-        String donorName = entity.getUserDonor() != null ? entity.getUserDonor().getName() : null;
 
-        return new CollectionPointBookDTO(
-                entity.getId(),
-                entity.getBook().getId(),
-                entity.getBook().getTitle(),
-                entity.getBook().getAuthor(),
-                entity.getBook().getCategory(),
-                entity.getStatus(),
-                donorId,
-                donorName
-        );
-    }
 }
