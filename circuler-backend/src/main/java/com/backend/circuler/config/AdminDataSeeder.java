@@ -40,12 +40,17 @@ public class AdminDataSeeder implements ApplicationRunner {
                 .orElseThrow(() -> new IllegalStateException(
                         "Role ROLE_ADMIN não encontrada. Verifique se o script de inicialização do banco foi executado."));
 
+        Role rootAdminRole = roleRepository.findByName("ROLE_ROOT_ADMIN")
+                .orElseThrow(() -> new IllegalStateException(
+                        "Role ROLE_ROOT_ADMIN não encontrada. Verifique se o script de inicialização do banco foi executado."));
+
         User admin = new User();
         admin.setName("Administrador");
         admin.setEmail(ADMIN_EMAIL);
         admin.setPassword(passwordEncoder.encode(ADMIN_DEFAULT_PASSWORD));
         admin.setStatus(UserStatus.ATIVO);
         admin.getRoles().add(adminRole);
+        admin.getRoles().add(rootAdminRole);
 
         userRepository.save(admin);
     }
