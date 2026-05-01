@@ -10,6 +10,9 @@ import com.backend.circuler.entity.User;
 import com.backend.circuler.enums.BookInstanceStatus;
 import com.backend.circuler.enums.CollectionPointStatus;
 import com.backend.circuler.enums.UserStatus;
+import com.backend.circuler.exception.ForbiddenException;
+import com.backend.circuler.exception.NotFoundException;
+import com.backend.circuler.exception.UnprocessableEntityException;
 import com.backend.circuler.mapper.CollectionPointMapper;
 import com.backend.circuler.repository.BookInstanceRepository;
 import com.backend.circuler.repository.CollectionPointRepository;
@@ -43,25 +46,25 @@ public class CollectionPointService {
     public CollectionPointResponseDTO create(CollectionPointCreateDTO request) {
         String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByEmailAndStatusNot(currentEmail, UserStatus.APAGADO)
-                .orElseThrow(() -> new RuntimeException("Usuário autenticado não encontrado."));
+                .orElseThrow(() -> new NotFoundException("Usuário autenticado não encontrado."));
 
         boolean isRootAdmin = currentUser.getRoles().stream()
                 .anyMatch(role -> "ROLE_ROOT_ADMIN".equals(role.getName()));
         if (!isRootAdmin) {
-            throw new RuntimeException("Apenas o administrador raiz pode criar pontos de coleta.");
+            throw new ForbiddenException("Apenas o administrador raiz pode criar pontos de coleta.");
         }
 
         User userAdmin = userRepository.findByIdAndStatusNot(request.getUserAdminId(), UserStatus.APAGADO)
-                .orElseThrow(() -> new RuntimeException("Usuário responsável não encontrado ou inativo."));
+                .orElseThrow(() -> new NotFoundException("Usuário responsável não encontrado ou inativo."));
 
         boolean isAdmin = userAdmin.getRoles().stream()
                 .anyMatch(role -> "ROLE_ADMIN".equals(role.getName()));
         if (!isAdmin) {
-            throw new RuntimeException("O usuário responsável deve ser um administrador.");
+            throw new UnprocessableEntityException("O usuário responsável deve ser um administrador.");
         }
 
         if (repository.existsByUserAdminIdAndStatusNot(request.getUserAdminId(), CollectionPointStatus.APAGADO)) {
-            throw new RuntimeException("Este usuário já é responsável por outro ponto de coleta.");
+            throw new UnprocessableEntityException("Este usuário já é responsável por outro ponto de coleta.");
         }
 
         CollectionPoint point = mapper.toEntity(request, userAdmin);
@@ -78,13 +81,13 @@ public class CollectionPointService {
 
     public CollectionPointResponseDTO findById(Integer id) {
         CollectionPoint point = repository.findByIdAndStatusNot(id, CollectionPointStatus.APAGADO)
-                .orElseThrow(() -> new RuntimeException("Ponto de coleta não encontrado."));
+                .orElseThrow(() -> new NotFoundException("Ponto de coleta não encontrado."));
         return mapper.toDto(point);
     }
 
     public CollectionPointDetailDTO findByIdWithBooks(Integer id) {
         CollectionPoint point = repository.findByIdAndStatusNot(id, CollectionPointStatus.APAGADO)
-                .orElseThrow(() -> new RuntimeException("Ponto de coleta não encontrado."));
+                .orElseThrow(() -> new NotFoundException("Ponto de coleta não encontrado."));
 
         List<BookInstance> instances = bookInstanceRepository
                 .findAllByCollectionPointIdAndStatusNot(id, BookInstanceStatus.APAGADO);
@@ -95,7 +98,7 @@ public class CollectionPointService {
     @Transactional
     public CollectionPointResponseDTO update(Integer id, CollectionPointUpdateDTO request) {
         CollectionPoint existing = repository.findByIdAndStatusNot(id, CollectionPointStatus.APAGADO)
-                .orElseThrow(() -> new RuntimeException("Ponto de coleta não encontrado."));
+                .orElseThrow(() -> new NotFoundException("Ponto de coleta não encontrado."));
 
         if (request.getName() != null && !request.getName().isBlank()) {
             existing.setName(request.getName());
@@ -115,16 +118,16 @@ public class CollectionPointService {
 
         if (request.getUserAdminId() != null && !request.getUserAdminId().equals(existing.getUserAdmin().getId())) {
             User newAdmin = userRepository.findByIdAndStatusNot(request.getUserAdminId(), UserStatus.APAGADO)
-                    .orElseThrow(() -> new RuntimeException("Usuário responsável não encontrado ou inativo."));
+                    .orElseThrow(() -> new NotFoundException("Usuário responsável não encontrado ou inativo."));
 
             boolean isAdmin = newAdmin.getRoles().stream()
                     .anyMatch(role -> "ROLE_ADMIN".equals(role.getName()));
             if (!isAdmin) {
-                throw new RuntimeException("O usuário responsável deve ser um administrador.");
+                throw new UnprocessableEntityException("O usuário responsável deve ser um administrador.");
             }
 
             if (repository.existsByUserAdminIdAndStatusNotAndIdNot(request.getUserAdminId(), CollectionPointStatus.APAGADO, id)) {
-                throw new RuntimeException("Este usuário já é responsável por outro ponto de coleta.");
+                throw new UnprocessableEntityException("Este usuário já é responsável por outro ponto de coleta.");
             }
 
             existing.setUserAdmin(newAdmin);
@@ -141,7 +144,7 @@ public class CollectionPointService {
     @Transactional
     public void delete(Integer id) {
         if (!repository.existsById(id)) {
-            throw new RuntimeException("Ponto de coleta não encontrado.");
+            throw new NotFoundException("Ponto de coleta não encontrado.");
         }
         repository.logicalDeleteById(id, CollectionPointStatus.APAGADO);
     }

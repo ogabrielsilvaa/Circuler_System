@@ -11,6 +11,9 @@ import com.backend.circuler.enums.BookInstanceStatus;
 import com.backend.circuler.enums.BookStatus;
 import com.backend.circuler.enums.CollectionPointStatus;
 import com.backend.circuler.enums.UserStatus;
+import com.backend.circuler.exception.ForbiddenException;
+import com.backend.circuler.exception.NotFoundException;
+import com.backend.circuler.exception.UnprocessableEntityException;
 import com.backend.circuler.mapper.BookInstanceMapper;
 import com.backend.circuler.repository.BookInstanceRepository;
 import com.backend.circuler.repository.BookRepository;
@@ -47,7 +50,7 @@ public class BookInstanceService {
     @Transactional
     public BookInstanceResponseDTO createForPoint(Integer pointId, BookInstanceCreateDTO request) {
         CollectionPoint point = collectionPointRepository.findByIdAndStatusNot(pointId, CollectionPointStatus.APAGADO)
-                .orElseThrow(() -> new RuntimeException("Ponto de coleta não encontrado."));
+                .orElseThrow(() -> new NotFoundException("Ponto de coleta não encontrado."));
 
         return doCreate(point, request);
     }
@@ -56,7 +59,7 @@ public class BookInstanceService {
     public BookInstanceResponseDTO createForMyPoint(BookInstanceCreateDTO request) {
         String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         CollectionPoint point = collectionPointRepository.findByUserAdminEmailAndStatusNot(currentEmail, CollectionPointStatus.APAGADO)
-                .orElseThrow(() -> new RuntimeException("Você não é responsável por nenhum ponto de coleta ativo."));
+                .orElseThrow(() -> new UnprocessableEntityException("Você não é responsável por nenhum ponto de coleta ativo."));
 
         return doCreate(point, request);
     }
@@ -64,16 +67,16 @@ public class BookInstanceService {
     private BookInstanceResponseDTO doCreate(CollectionPoint point, BookInstanceCreateDTO request) {
         long activeCount = repository.countByCollectionPointIdAndStatusNot(point.getId(), BookInstanceStatus.APAGADO);
         if (activeCount >= point.getCapacityLimit()) {
-            throw new RuntimeException("Ponto de coleta atingiu a capacidade máxima de " + point.getCapacityLimit() + " exemplares.");
+            throw new UnprocessableEntityException("Ponto de coleta atingiu a capacidade máxima de " + point.getCapacityLimit() + " exemplares.");
         }
 
         Book book = bookRepository.findByIdAndStatusNot(request.getBookId(), BookStatus.APAGADO)
-                .orElseThrow(() -> new RuntimeException("Livro não encontrado ou inativo."));
+                .orElseThrow(() -> new NotFoundException("Livro não encontrado ou inativo."));
 
         User donor = null;
         if (request.getUserDonorId() != null) {
             donor = userRepository.findByIdAndStatusNot(request.getUserDonorId(), UserStatus.APAGADO)
-                    .orElseThrow(() -> new RuntimeException("Usuário doador não encontrado ou inativo."));
+                    .orElseThrow(() -> new NotFoundException("Usuário doador não encontrado ou inativo."));
         }
 
         BookInstance instance = new BookInstance();
@@ -94,14 +97,14 @@ public class BookInstanceService {
 
     public BookInstanceResponseDTO findById(Integer id) {
         BookInstance instance = repository.findByIdAndStatusNot(id, BookInstanceStatus.APAGADO)
-                .orElseThrow(() -> new RuntimeException("Exemplar não encontrado."));
+                .orElseThrow(() -> new NotFoundException("Exemplar não encontrado."));
         return mapper.toDto(instance);
     }
 
     @Transactional
     public BookInstanceResponseDTO update(Integer id, BookInstanceUpdateDTO request) {
         BookInstance existing = repository.findByIdAndStatusNot(id, BookInstanceStatus.APAGADO)
-                .orElseThrow(() -> new RuntimeException("Exemplar não encontrado."));
+                .orElseThrow(() -> new NotFoundException("Exemplar não encontrado."));
 
         checkOwnership(existing);
 
@@ -115,7 +118,7 @@ public class BookInstanceService {
     @Transactional
     public void delete(Integer id) {
         BookInstance existing = repository.findByIdAndStatusNot(id, BookInstanceStatus.APAGADO)
-                .orElseThrow(() -> new RuntimeException("Exemplar não encontrado."));
+                .orElseThrow(() -> new NotFoundException("Exemplar não encontrado."));
 
         checkOwnership(existing);
 
@@ -125,13 +128,13 @@ public class BookInstanceService {
     private void checkOwnership(BookInstance instance) {
         String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByEmailAndStatusNot(currentEmail, UserStatus.APAGADO)
-                .orElseThrow(() -> new RuntimeException("Usuário autenticado não encontrado."));
+                .orElseThrow(() -> new NotFoundException("Usuário autenticado não encontrado."));
 
         boolean isRootAdmin = currentUser.getRoles().stream()
                 .anyMatch(role -> "ROLE_ROOT_ADMIN".equals(role.getName()));
 
         if (!isRootAdmin && !instance.getCollectionPoint().getUserAdmin().getEmail().equals(currentEmail)) {
-            throw new RuntimeException("Você não tem permissão para gerenciar exemplares deste ponto de coleta.");
+            throw new ForbiddenException("Você não tem permissão para gerenciar exemplares deste ponto de coleta.");
         }
     }
 }

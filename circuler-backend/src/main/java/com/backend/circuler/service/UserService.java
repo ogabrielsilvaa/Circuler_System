@@ -6,6 +6,8 @@ import com.backend.circuler.dto.user.UserUpdateDTO;
 import com.backend.circuler.entity.Role;
 import com.backend.circuler.entity.User;
 import com.backend.circuler.enums.UserStatus;
+import com.backend.circuler.exception.NotFoundException;
+import com.backend.circuler.exception.UnprocessableEntityException;
 import com.backend.circuler.mapper.UserMapper;
 import com.backend.circuler.repository.RoleRepository;
 import com.backend.circuler.repository.UserRepository;
@@ -37,11 +39,11 @@ public class UserService {
     @Transactional
     public UserResponseDTO create(UserCreateDTO request) {
         if (repository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("Este e-mail já está em uso.");
+            throw new UnprocessableEntityException("Este e-mail já está em uso.");
         }
 
         Role userRole = roleRepository.findByName("ROLE_USER")
-                .orElseThrow(() -> new RuntimeException("Role ROLE_USER não encontrada."));
+                .orElseThrow(() -> new NotFoundException("Role ROLE_USER não encontrada."));
 
         User user = mapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -60,7 +62,7 @@ public class UserService {
 
     public UserResponseDTO findByIdActive(Integer id) {
         User user = repository.findByIdAndStatusNot(id, UserStatus.APAGADO)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado ou apagado."));
+                .orElseThrow(() -> new NotFoundException("Usuário não encontrado ou inativo."));
         return mapper.toDto(user);
     }
 
@@ -74,7 +76,7 @@ public class UserService {
     @Transactional
     public UserResponseDTO update(Integer id, UserUpdateDTO request) {
         User existingUser = repository.findByIdAndStatusNot(id, UserStatus.APAGADO)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado ou apagado."));
+                .orElseThrow(() -> new NotFoundException("Usuário não encontrado ou inativo."));
 
         if (request.getName() != null && !request.getName().isBlank()) {
             existingUser.setName(request.getName());
@@ -83,7 +85,7 @@ public class UserService {
         if (request.getEmail() != null && !request.getEmail().isBlank()) {
             if (!existingUser.getEmail().equals(request.getEmail())) {
                 if (repository.findByEmail(request.getEmail()).isPresent()) {
-                    throw new RuntimeException("Este e-mail já está em uso por outro usuário.");
+                    throw new UnprocessableEntityException("Este e-mail já está em uso por outro usuário.");
                 }
                 existingUser.setEmail(request.getEmail());
             }
@@ -104,7 +106,7 @@ public class UserService {
     @Transactional
     public void delete(Integer id) {
         if (!repository.existsById(id)) {
-            throw new RuntimeException("Usuário não encontrado.");
+            throw new NotFoundException("Usuário não encontrado.");
         }
         repository.logicalDeleteById(id, UserStatus.APAGADO);
     }
@@ -112,17 +114,17 @@ public class UserService {
     @Transactional
     public UserResponseDTO promoteToAdmin(Integer id) {
         User user = repository.findByIdAndStatusNot(id, UserStatus.APAGADO)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado ou apagado."));
+                .orElseThrow(() -> new NotFoundException("Usuário não encontrado ou inativo."));
 
         boolean isAdmin = user.getRoles().stream()
                 .anyMatch(role -> "ROLE_ADMIN".equals(role.getName()));
 
         if (isAdmin) {
-            throw new RuntimeException("Usuário já possui a role de administrador.");
+            throw new UnprocessableEntityException("Usuário já possui a role de administrador.");
         }
 
         Role adminRole = roleRepository.findByName("ROLE_ADMIN")
-                .orElseThrow(() -> new RuntimeException("Role ROLE_ADMIN não encontrada."));
+                .orElseThrow(() -> new NotFoundException("Role ROLE_ADMIN não encontrada."));
 
         user.getRoles().add(adminRole);
         User updatedUser = repository.save(user);
