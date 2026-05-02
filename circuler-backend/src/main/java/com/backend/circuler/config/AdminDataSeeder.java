@@ -5,6 +5,7 @@ import com.backend.circuler.entity.User;
 import com.backend.circuler.enums.UserStatus;
 import com.backend.circuler.repository.RoleRepository;
 import com.backend.circuler.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,8 +15,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class AdminDataSeeder implements ApplicationRunner {
 
-    private static final String ADMIN_EMAIL = "admin@circuler.com";
-    private static final String ADMIN_DEFAULT_PASSWORD = "Admin@123";
+    @Value("${admin.email}")
+    private String adminEmail;
+
+    @Value("${admin.password}")
+    private String adminPassword;
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -32,7 +36,7 @@ public class AdminDataSeeder implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        if (userRepository.findByEmail(ADMIN_EMAIL).isPresent()) {
+        if (userRepository.findByEmail(adminEmail).isPresent()) {
             return;
         }
 
@@ -46,8 +50,8 @@ public class AdminDataSeeder implements ApplicationRunner {
 
         User admin = new User();
         admin.setName("Administrador");
-        admin.setEmail(ADMIN_EMAIL);
-        admin.setPassword(passwordEncoder.encode(ADMIN_DEFAULT_PASSWORD));
+        admin.setEmail(adminEmail);
+        admin.setPassword(passwordEncoder.encode(adminPassword));
         admin.setStatus(UserStatus.ATIVO);
         admin.getRoles().add(adminRole);
         admin.getRoles().add(rootAdminRole);
