@@ -1,8 +1,16 @@
 package com.backend.circuler.dto.user;
 
+import jakarta.validation.constraints.NotBlank;
+
 public class UserCreateDTO {
+
+    @NotBlank(message = "O nome é obrigatório")
     private String name;
+
+    @NotBlank(message = "O e-mail é obrigatório")
     private String email;
+
+    @NotBlank(message = "A senha é obrigatória")
     private String password;
 
     public UserCreateDTO() {}
