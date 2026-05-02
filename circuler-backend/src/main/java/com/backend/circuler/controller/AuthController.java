@@ -4,7 +4,13 @@ import com.backend.circuler.dto.auth.LoginRequestDTO;
 import com.backend.circuler.dto.auth.LoginResponseDTO;
 import com.backend.circuler.security.CustomUserDetailsService;
 import com.backend.circuler.security.JwtUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -36,7 +42,20 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDTO> login(@RequestBody LoginRequestDTO request) {
+    @Operation(
+            summary = "Autenticar Usuário",
+            description = "Autentica um usuário com e-mail e senha e retorna um token JWT para uso nas demais requisições. Endpoint público — não requer autenticação prévia."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Login efetuado com sucesso",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoginResponseDTO.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Campos obrigatórios ausentes ou em branco no corpo da requisição"),
+            @ApiResponse(responseCode = "401", description = "Credenciais inválidas — e-mail ou senha incorretos")
+    })
+    public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
