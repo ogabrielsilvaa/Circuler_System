@@ -44,6 +44,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/books/**").authenticated()
                         .requestMatchers("/api/books/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/collection-points/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/collection-points/**").hasRole("ROOT_ADMIN")
                         .requestMatchers("/api/collection-points/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/book-instances/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/book-instances/point/**").hasRole("ROOT_ADMIN")

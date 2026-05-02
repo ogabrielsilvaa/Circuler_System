@@ -100,6 +100,17 @@ public class CollectionPointService {
         CollectionPoint existing = repository.findByIdAndStatusNot(id, CollectionPointStatus.APAGADO)
                 .orElseThrow(() -> new NotFoundException("Ponto de coleta não encontrado."));
 
+        String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByEmailAndStatusNot(currentEmail, UserStatus.APAGADO)
+                .orElseThrow(() -> new NotFoundException("Usuário autenticado não encontrado."));
+
+        boolean isRootAdmin = currentUser.getRoles().stream()
+                .anyMatch(role -> "ROLE_ROOT_ADMIN".equals(role.getName()));
+
+        if (!isRootAdmin && !existing.getUserAdmin().getId().equals(currentUser.getId())) {
+            throw new ForbiddenException("Você não é o responsável por este ponto de coleta.");
+        }
+
         if (request.getName() != null && !request.getName().isBlank()) {
             existing.setName(request.getName());
         }
@@ -116,24 +127,32 @@ public class CollectionPointService {
             existing.setCapacityLimit(request.getCapacityLimit());
         }
 
-        if (request.getUserAdminId() != null && !request.getUserAdminId().equals(existing.getUserAdmin().getId())) {
-            User newAdmin = userRepository.findByIdAndStatusNot(request.getUserAdminId(), UserStatus.APAGADO)
-                    .orElseThrow(() -> new NotFoundException("Usuário responsável não encontrado ou inativo."));
+        if (isRootAdmin) {
+            if (request.getUserAdminId() != null && !request.getUserAdminId().equals(existing.getUserAdmin().getId())) {
+                User newAdmin = userRepository.findByIdAndStatusNot(request.getUserAdminId(), UserStatus.APAGADO)
+                        .orElseThrow(() -> new NotFoundException("Usuário responsável não encontrado ou inativo."));
 
-            boolean isAdmin = newAdmin.getRoles().stream()
-                    .anyMatch(role -> "ROLE_ADMIN".equals(role.getName()));
-            if (!isAdmin) {
-                throw new UnprocessableEntityException("O usuário responsável deve ser um administrador.");
+                boolean isAdmin = newAdmin.getRoles().stream()
+                        .anyMatch(role -> "ROLE_ADMIN".equals(role.getName()));
+                if (!isAdmin) {
+                    throw new UnprocessableEntityException("O usuário responsável deve ser um administrador.");
+                }
+
+                if (repository.existsByUserAdminIdAndStatusNotAndIdNot(request.getUserAdminId(), CollectionPointStatus.APAGADO, id)) {
+                    throw new UnprocessableEntityException("Este usuário já é responsável por outro ponto de coleta.");
+                }
+
+                existing.setUserAdmin(newAdmin);
             }
-
-            if (repository.existsByUserAdminIdAndStatusNotAndIdNot(request.getUserAdminId(), CollectionPointStatus.APAGADO, id)) {
-                throw new UnprocessableEntityException("Este usuário já é responsável por outro ponto de coleta.");
-            }
-
-            existing.setUserAdmin(newAdmin);
         }
 
         if (request.getStatus() != null) {
+            if (request.getStatus() == CollectionPointStatus.APAGADO) {
+                throw new UnprocessableEntityException("Utilize o endpoint de exclusão para apagar um ponto de coleta.");
+            }
+            if (!isRootAdmin && request.getStatus() == CollectionPointStatus.INATIVO) {
+                throw new ForbiddenException("Apenas o administrador raiz pode inativar um ponto de coleta.");
+            }
             existing.setStatus(request.getStatus());
         }
 
@@ -143,9 +162,8 @@ public class CollectionPointService {
 
     @Transactional
     public void delete(Integer id) {
-        if (!repository.existsById(id)) {
-            throw new NotFoundException("Ponto de coleta não encontrado.");
-        }
+        repository.findByIdAndStatusNot(id, CollectionPointStatus.APAGADO)
+                .orElseThrow(() -> new NotFoundException("Ponto de coleta não encontrado."));
         repository.logicalDeleteById(id, CollectionPointStatus.APAGADO);
     }
 }
