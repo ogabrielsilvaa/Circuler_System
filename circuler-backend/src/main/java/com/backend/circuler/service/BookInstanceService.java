@@ -1,6 +1,7 @@
 package com.backend.circuler.service;
 
 import com.backend.circuler.dto.bookinstance.BookInstanceCreateDTO;
+import com.backend.circuler.dto.bookinstance.BookInstanceNewBookCreateDTO;
 import com.backend.circuler.dto.bookinstance.BookInstanceResponseDTO;
 import com.backend.circuler.dto.bookinstance.BookInstanceUpdateDTO;
 import com.backend.circuler.entity.Book;
@@ -57,27 +58,58 @@ public class BookInstanceService {
 
     @Transactional
     public BookInstanceResponseDTO createForMyPoint(BookInstanceCreateDTO request) {
-        String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        CollectionPoint point = collectionPointRepository.findByUserAdminEmailAndStatusNot(currentEmail, CollectionPointStatus.APAGADO)
-                .orElseThrow(() -> new UnprocessableEntityException("Você não é responsável por nenhum ponto de coleta ativo."));
-
+        CollectionPoint point = resolveMyPoint();
         return doCreate(point, request);
     }
 
+    @Transactional
+    public BookInstanceResponseDTO createForMyPointWithNewBook(BookInstanceNewBookCreateDTO request) {
+        CollectionPoint point = resolveMyPoint();
+        checkCapacity(point);
+
+        Book book = new Book();
+        book.setTitle(request.getBookTitle());
+        book.setAuthor(request.getBookAuthor());
+        book.setPublisher(request.getBookPublisher());
+        book.setThumbnailUrl(request.getBookThumbnailUrl());
+        book.setCategory(request.getBookCategory());
+        book.setIsbn(request.getBookIsbn());
+        book.setStatus(BookStatus.PENDENTE);
+        book = bookRepository.save(book);
+
+        User donor = resolveDonor(request.getUserDonorId());
+
+        BookInstance instance = new BookInstance();
+        instance.setBook(book);
+        instance.setCollectionPoint(point);
+        instance.setUserDonor(donor);
+        instance.setStatus(BookInstanceStatus.PENDENTE);
+
+        return mapper.toDto(repository.save(instance));
+    }
+
+    public List<BookInstanceResponseDTO> findAllPending() {
+        return repository.findAllByStatus(BookInstanceStatus.PENDENTE)
+                .stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<BookInstanceResponseDTO> findPendingForMyPoint() {
+        CollectionPoint point = resolveMyPoint();
+        return repository.findAllByCollectionPointIdAndStatus(point.getId(), BookInstanceStatus.PENDENTE)
+                .stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
+    }
+
     private BookInstanceResponseDTO doCreate(CollectionPoint point, BookInstanceCreateDTO request) {
-        long activeCount = repository.countByCollectionPointIdAndStatusNot(point.getId(), BookInstanceStatus.APAGADO);
-        if (activeCount >= point.getCapacityLimit()) {
-            throw new UnprocessableEntityException("Ponto de coleta atingiu a capacidade máxima de " + point.getCapacityLimit() + " exemplares.");
-        }
+        checkCapacity(point);
 
         Book book = bookRepository.findByIdAndStatusNot(request.getBookId(), BookStatus.APAGADO)
                 .orElseThrow(() -> new NotFoundException("Livro não encontrado ou inativo."));
 
-        User donor = null;
-        if (request.getUserDonorId() != null) {
-            donor = userRepository.findByIdAndStatusNot(request.getUserDonorId(), UserStatus.APAGADO)
-                    .orElseThrow(() -> new NotFoundException("Usuário doador não encontrado ou inativo."));
-        }
+        User donor = resolveDonor(request.getUserDonorId());
 
         BookInstance instance = new BookInstance();
         instance.setBook(book);
@@ -86,6 +118,25 @@ public class BookInstanceService {
         instance.setStatus(BookInstanceStatus.DISPONIVEL);
 
         return mapper.toDto(repository.save(instance));
+    }
+
+    private CollectionPoint resolveMyPoint() {
+        String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        return collectionPointRepository.findByUserAdminEmailAndStatusNot(currentEmail, CollectionPointStatus.APAGADO)
+                .orElseThrow(() -> new UnprocessableEntityException("Você não é responsável por nenhum ponto de coleta ativo."));
+    }
+
+    private void checkCapacity(CollectionPoint point) {
+        long activeCount = repository.countByCollectionPointIdAndStatusNot(point.getId(), BookInstanceStatus.APAGADO);
+        if (activeCount >= point.getCapacityLimit()) {
+            throw new UnprocessableEntityException("Ponto de coleta atingiu a capacidade máxima de " + point.getCapacityLimit() + " exemplares.");
+        }
+    }
+
+    private User resolveDonor(Integer userDonorId) {
+        if (userDonorId == null) return null;
+        return userRepository.findByIdAndStatusNot(userDonorId, UserStatus.APAGADO)
+                .orElseThrow(() -> new NotFoundException("Usuário doador não encontrado ou inativo."));
     }
 
     public List<BookInstanceResponseDTO> findAll() {

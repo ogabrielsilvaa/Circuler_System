@@ -4,10 +4,11 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(type = "integer", description = "0: APAGADO, 1: ATIVO")
+@Schema(type = "integer", description = "0: APAGADO, 1: ATIVO, 3: PENDENTE")
 public enum BookStatus {
     APAGADO(0, "APAGADO"),
-    ATIVO(1, "ATIVO");
+    ATIVO(1, "ATIVO"),
+    PENDENTE(3, "PENDENTE");
 
     private final Integer code;
     private final String description;

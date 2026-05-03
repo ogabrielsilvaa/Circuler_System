@@ -16,6 +16,8 @@ public interface BookRepository extends JpaRepository<Book, Integer> {
 
     List<Book> findAllByStatusNot(BookStatus status);
 
+    List<Book> findAllByStatus(BookStatus status);
+
     @Modifying
     @Query("UPDATE Book b SET b.status = :status WHERE b.id = :id")
     void logicalDeleteById(@Param("id") Integer id, @Param("status") BookStatus status);

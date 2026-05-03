@@ -2,14 +2,21 @@ package com.backend.circuler.dto.book;
 
 import com.backend.circuler.enums.BookCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 public class BookCreateDTO {
 
+    @NotBlank(message = "O título é obrigatório")
     private String title;
+
+    @NotBlank(message = "O autor é obrigatório")
     private String author;
+
     private String publisher;
     private String thumbnailUrl;
 
+    @NotNull(message = "A categoria é obrigatória")
     @Schema(
             type = "integer",
             allowableValues = {"1", "2", "3", "4"},

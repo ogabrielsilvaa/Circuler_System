@@ -4,8 +4,12 @@ import com.backend.circuler.dto.book.BookCreateDTO;
 import com.backend.circuler.dto.book.BookResponseDTO;
 import com.backend.circuler.dto.book.BookUpdateDTO;
 import com.backend.circuler.entity.Book;
+import com.backend.circuler.enums.BookInstanceStatus;
 import com.backend.circuler.enums.BookStatus;
+import com.backend.circuler.exception.NotFoundException;
+import com.backend.circuler.exception.UnprocessableEntityException;
 import com.backend.circuler.mapper.BookMapper;
+import com.backend.circuler.repository.BookInstanceRepository;
 import com.backend.circuler.repository.BookRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,10 +22,12 @@ public class BookService {
 
     private final BookRepository repository;
     private final BookMapper mapper;
+    private final BookInstanceRepository bookInstanceRepository;
 
-    public BookService(BookRepository repository, BookMapper mapper) {
+    public BookService(BookRepository repository, BookMapper mapper, BookInstanceRepository bookInstanceRepository) {
         this.repository = repository;
         this.mapper = mapper;
+        this.bookInstanceRepository = bookInstanceRepository;
     }
 
     @Transactional
@@ -32,7 +38,14 @@ public class BookService {
     }
 
     public List<BookResponseDTO> findAllActive() {
-        return repository.findAllByStatusNot(BookStatus.APAGADO)
+        return repository.findAllByStatus(BookStatus.ATIVO)
+                .stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<BookResponseDTO> findAllPending() {
+        return repository.findAllByStatus(BookStatus.PENDENTE)
                 .stream()
                 .map(mapper::toDto)
                 .collect(Collectors.toList());
@@ -40,14 +53,14 @@ public class BookService {
 
     public BookResponseDTO findById(Integer id) {
         Book book = repository.findByIdAndStatusNot(id, BookStatus.APAGADO)
-                .orElseThrow(() -> new RuntimeException("Livro não encontrado."));
+                .orElseThrow(() -> new NotFoundException("Livro não encontrado."));
         return mapper.toDto(book);
     }
 
     @Transactional
     public BookResponseDTO update(Integer id, BookUpdateDTO request) {
         Book existingBook = repository.findByIdAndStatusNot(id, BookStatus.APAGADO)
-                .orElseThrow(() -> new RuntimeException("Livro não encontrado."));
+                .orElseThrow(() -> new NotFoundException("Livro não encontrado."));
 
         if (request.getTitle() != null && !request.getTitle().isBlank()) {
             existingBook.setTitle(request.getTitle());
@@ -82,9 +95,26 @@ public class BookService {
     }
 
     @Transactional
+    public BookResponseDTO approve(Integer id) {
+        Book book = repository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Livro não encontrado."));
+
+        if (book.getStatus() != BookStatus.PENDENTE) {
+            throw new UnprocessableEntityException("Apenas livros com status PENDENTE podem ser aprovados.");
+        }
+
+        book.setStatus(BookStatus.ATIVO);
+        repository.save(book);
+
+        bookInstanceRepository.updateStatusByBookIdAndStatus(id, BookInstanceStatus.PENDENTE, BookInstanceStatus.DISPONIVEL);
+
+        return mapper.toDto(book);
+    }
+
+    @Transactional
     public void delete(Integer id) {
         if (!repository.existsById(id)) {
-            throw new RuntimeException("Livro não encontrado.");
+            throw new NotFoundException("Livro não encontrado.");
         }
         repository.logicalDeleteById(id, BookStatus.APAGADO);
     }

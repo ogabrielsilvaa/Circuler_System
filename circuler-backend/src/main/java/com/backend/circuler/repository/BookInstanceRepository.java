@@ -20,6 +20,16 @@ public interface BookInstanceRepository extends JpaRepository<BookInstance, Inte
 
     long countByCollectionPointIdAndStatusNot(Integer collectionPointId, BookInstanceStatus status);
 
+    List<BookInstance> findAllByStatus(BookInstanceStatus status);
+
+    List<BookInstance> findAllByCollectionPointIdAndStatus(Integer collectionPointId, BookInstanceStatus status);
+
+    @Modifying
+    @Query("UPDATE BookInstance bi SET bi.status = :newStatus WHERE bi.book.id = :bookId AND bi.status = :currentStatus")
+    void updateStatusByBookIdAndStatus(@Param("bookId") Integer bookId,
+                                       @Param("currentStatus") BookInstanceStatus currentStatus,
+                                       @Param("newStatus") BookInstanceStatus newStatus);
+
     @Modifying
     @Query("UPDATE BookInstance bi SET bi.status = :status WHERE bi.id = :id")
     void logicalDeleteById(@Param("id") Integer id, @Param("status") BookInstanceStatus status);

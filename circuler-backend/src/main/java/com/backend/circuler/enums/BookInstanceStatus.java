@@ -4,12 +4,13 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(type = "integer", description = "0: APAGADO, 1: DISPONIVEL, 2: RESERVADO, 3: RETIRADO")
+@Schema(type = "integer", description = "0: APAGADO, 1: DISPONIVEL, 2: RESERVADO, 3: RETIRADO, 4: PENDENTE")
 public enum BookInstanceStatus {
     APAGADO(0, "APAGADO"),
     DISPONIVEL(1, "DISPONIVEL"),
     RESERVADO(2, "RESERVADO"),
-    RETIRADO(3, "RETIRADO");
+    RETIRADO(3, "RETIRADO"),
+    PENDENTE(4, "PENDENTE");
 
     private final Integer code;
     private final String description;
