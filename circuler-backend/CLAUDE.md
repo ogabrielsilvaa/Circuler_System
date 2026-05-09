@@ -83,6 +83,13 @@ The API uses stateless JWT Bearer authentication.
 | `POST /api/book-instances/my-point/new-book` | `ROLE_ADMIN` only |
 | `PATCH /api/book-instances/{id}` | `ROLE_ADMIN` only (ownership check in service) |
 | `DELETE /api/book-instances/{id}` | `ROLE_ADMIN` only (ownership check in service) |
+| `POST /api/reservations` | Authenticated (any role) |
+| `GET /api/reservations/all` | `ROLE_ROOT_ADMIN` only |
+| `GET /api/reservations/my-point` | `ROLE_ADMIN` only |
+| `GET /api/reservations/my-reservations` | Authenticated (any role) |
+| `GET /api/reservations/{id}` | Authenticated (ownership check in service) |
+| `PATCH /api/reservations/{id}` | `ROLE_ADMIN` only |
+| `DELETE /api/reservations/{id}` | `ROLE_ROOT_ADMIN` only |
 
 ## Critical Conventions
 
@@ -189,15 +196,37 @@ For `my-point` variants, the service extracts the authenticated user's email fro
 **Status flow:**
 ```
 PENDENTE(4) → DISPONIVEL(1)   (triggered by book approval)
-DISPONIVEL(1) → RESERVADO(2)  (reservation created — not yet implemented)
+DISPONIVEL(1) → RESERVADO(2)  (triggered by POST /api/reservations)
 RESERVADO(2) → RETIRADO(3)    (user picked up the book)
 Any → APAGADO(0)              (logical delete via DELETE endpoint)
 ```
 PATCH on a BookInstance only accepts a `status` field update (no other fields). The transition PENDENTE → DISPONIVEL is performed automatically by `BookService.approve()`, not by the PATCH endpoint.
 
-### Reservations (not yet implemented)
+### Reservations
 
-The `reservations` table exists in the database schema but has no entity, repository, service, or controller. When implemented it will connect `User` ↔ `BookInstance` and drive the `DISPONIVEL → RESERVADO → RETIRADO` transitions.
+A `Reservation` connects a `User` to a `BookInstance` and drives the `DISPONIVEL → RESERVADO → RETIRADO` transition on the instance.
+
+**Dependencies for creation:**
+1. `BookInstance` must exist and status == `DISPONIVEL` (any other status → 422)
+2. No existing `ATIVA` reservation for the same instance (`existsByBookInstanceIdAndStatus`)
+3. A 4-digit numeric verification code is generated automatically (`String.format("%04d", new Random().nextInt(10000))`)
+
+**Status transitions:**
+```
+ATIVA(1) → CONCLUIDA(2)   PATCH /{id} status=2  →  BookInstance becomes RETIRADO
+ATIVA(1) → CANCELADA(3)   PATCH /{id} status=3  →  BookInstance returns to DISPONIVEL
+Any      → APAGADA(0)     DELETE /{id}           →  logical delete only (BookInstance unchanged)
+```
+
+**Three separate GET endpoints (one responsibility each):**
+
+| Endpoint | Role | Returns |
+|---|---|---|
+| `GET /api/reservations/all` | `ROLE_ROOT_ADMIN` | All non-deleted reservations in the system |
+| `GET /api/reservations/my-point` | `ROLE_ADMIN` | Non-deleted reservations for instances at the admin's point |
+| `GET /api/reservations/my-reservations` | Authenticated (any role) | Non-deleted reservations belonging to the current user |
+
+**Ownership check on `GET /{id}`:** ROOT_ADMIN sees any; ADMIN sees reservations from their point; user sees only their own. 403 otherwise.
 
 ## Entity Relationships
 
@@ -221,12 +250,13 @@ Key constraints:
 
 ## Status Enums
 
-| Entity | APAGADO | ATIVO | Other values |
+| Entity | APAGADO/APAGADA | ATIVO/ATIVA | Other values |
 |---|---|---|---|
 | User | 0 | 1 | INATIVO(2) |
 | Book | 0 | 1 | PENDENTE(3) |
 | BookInstance | 0 | DISPONIVEL(1) | RESERVADO(2), RETIRADO(3), PENDENTE(4) |
 | CollectionPoint | 0 | 1 | LOTADO(2), INATIVO(3) |
+| Reservation | APAGADA(0) | ATIVA(1) | CONCLUIDA(2), CANCELADA(3) |
 
 All queries that return "active" records filter `status != APAGADO`. There are dedicated `findAll()` methods (no filter) used by internal services only.
 
@@ -240,5 +270,4 @@ All queries that return "active" records filter `status != APAGADO`. There are d
 - `books` — full CRUD + logical delete; statuses: `APAGADO(0)`, `ATIVO(1)`, `PENDENTE(3)`; categories: `INFANTIL_JUVENIL(1)`, `AUTOAJUDA(2)`, `DIDATICO(3)`, `ESCOLAR(4)`
 - `collection_points` — full CRUD + logical delete; statuses: `APAGADO(0)`, `ATIVO(1)`, `LOTADO(2)`, `INATIVO(3)`; `@ManyToOne` with `users` (EAGER); ResponseDTO exposes `userAdminId`, `userAdminName`, `userAdminEmail`
 - `book_instances` — full CRUD + logical delete; statuses: `APAGADO(0)`, `DISPONIVEL(1)`, `RESERVADO(2)`, `RETIRADO(3)`, `PENDENTE(4)`; `@ManyToOne` to Book (EAGER), CollectionPoint (EAGER) and User/donor (EAGER, nullable); two create endpoints; ownership check on PATCH/DELETE; `GET /api/collection-points/{id}/books` returns `CollectionPointDetailDTO` (point fields + `List<CollectionPointBookDTO>` with id, bookId, bookTitle, bookAuthor, bookCategory, status, userDonorId, userDonorName)
-
-**Not yet implemented:** `reservations` — table exists in the schema but has no entity/service/repository yet.
+- `reservations` — full CRUD + logical delete; statuses: `APAGADA(0)`, `ATIVA(1)`, `CONCLUIDA(2)`, `CANCELADA(3)`; `@ManyToOne` to User (EAGER, NOT NULL) and BookInstance (EAGER, NOT NULL); verification code (`VARCHAR(45)`) gerado automaticamente com 4 dígitos; criação atualiza `BookInstance.status` → `RESERVADO`; conclusão → `RETIRADO`; cancelamento → `DISPONIVEL`; três endpoints GET separados por responsabilidade (`/all`, `/my-point`, `/my-reservations`)
