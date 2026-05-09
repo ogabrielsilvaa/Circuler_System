@@ -1,10 +1,16 @@
 package com.backend.circuler.dto.collectionpoint;
 
 import com.backend.circuler.enums.CollectionPointStatus;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+@JsonPropertyOrder({
+        "id", "name", "addressStreet", "addressNeighborhood",
+        "capacityLimit", "status", "userAdminId", "userAdminName",
+        "userAdminEmail", "createdAt", "updatedAt", "books"
+})
 public class CollectionPointDetailDTO {
 
     private Integer id;
