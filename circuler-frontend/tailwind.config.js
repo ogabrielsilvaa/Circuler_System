@@ -1,3 +1,6 @@
+import { colors } from "./src/styles/colors";
+import { fontFamily } from "./src/styles/fontFamily";
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -6,7 +9,14 @@ module.exports = {
   ],
   presets: [require('nativewind/preset')],
   theme: {
-    extend: {},
+    extend: {
+      colors: colors,
+      fontFamily: {
+        regular: fontFamily.regular,
+        medium: fontFamily.medium,
+        bold: fontFamily.bold,
+      }
+    },
   },
   plugins: [],
 }
