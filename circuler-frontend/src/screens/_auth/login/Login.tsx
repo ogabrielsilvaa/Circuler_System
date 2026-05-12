@@ -1,11 +1,11 @@
 import { View, Text, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { useState } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { LoginFormValues } from '../../../types/auth.types';
 import { Button } from '../../../components/Button';
 import { Input } from '../../../components/Input';
-import { LoginHeader } from './-components/LoginHeader';
+import { LoginHeader } from '../-components/LoginHeader';
 
 export default function Login() {
   const router = useRouter();
@@ -22,7 +22,7 @@ export default function Login() {
   }
 
   function handleRegister(): void {
-    router.push('/(auth)/register');
+    router.push('/(auth)/register' as unknown as Href);
   }
 
   return (
