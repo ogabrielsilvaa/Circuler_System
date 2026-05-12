@@ -11,7 +11,7 @@ Mobile app for the Circuler platform — a book donation and exchange system (Se
 
 ## Folder Architecture
 
-Expo Router requires `app/` to contain **routes only**. Because of this, the actual screen implementation lives in `src/routes/`, and files inside `app/` only import and re-export the corresponding screen.
+Expo Router requires `app/` to contain **screens only**. Because of this, the actual screen implementation lives in `src/screens/`, and files inside `app/` only import and re-export the corresponding screen.
 
 ```
 circuler-frontend/
@@ -20,11 +20,11 @@ circuler-frontend/
 │   ├── +not-found.tsx
 │   ├── (auth)/
 │   │   ├── _layout.tsx
-│   │   ├── login.tsx                # → imports from src/routes/_auth/login/Login.tsx
+│   │   ├── login.tsx                # → imports from src/screens/_auth/login/Login.tsx
 │   │   └── register.tsx
 │   └── (app)/
 │       ├── _layout.tsx              # Tab navigator
-│       ├── index.tsx                # → imports from src/routes/_app/home/Home.tsx
+│       ├── index.tsx                # → imports from src/screens/_app/home/Home.tsx
 │       ├── search.tsx
 │       ├── reservations.tsx
 │       ├── profile.tsx
@@ -32,8 +32,8 @@ circuler-frontend/
 │           └── [id].tsx
 │
 ├── src/
-│   ├── routes/                      # Screen implementation (component co-location)
-│   │   ├── -components/             # Components shared across all routes
+│   ├── screens/                      # Screen implementation (component co-location)
+│   │   ├── -components/             # Components shared across all screens
 │   │   │
 │   │   ├── _auth/                   # Unauthenticated screens
 │   │   │   ├── -components/         # Components shared across auth screens
@@ -114,9 +114,9 @@ The scope hierarchy follows this logic — a component should live at the level 
 
 ```
 src/components/                          → used on any screen in the app
-src/routes/-components/                  → used across more than one route group (auth or app)
-src/routes/_auth/-components/            → used across more than one auth screen
-src/routes/_auth/login/-components/      → used only on the login screen
+src/screens/-components/                  → used across more than one route group (auth or app)
+src/screens/_auth/-components/            → used across more than one auth screen
+src/screens/_auth/login/-components/      → used only on the login screen
 ```
 
 If a component from a screen-level `-components/` folder starts being used in another screen, it **moves up one level** in the hierarchy.
@@ -127,7 +127,7 @@ Files inside `app/` are thin — they only import and re-export the actual scree
 
 ```typescript
 // app/(auth)/login.tsx
-import Login from '@/routes/_auth/login/Login'
+import Login from '@/screens/_auth/login/Login'
 export default Login
 ```
 
@@ -137,7 +137,7 @@ Always use relative paths. Never use path aliases (e.g., `@/`).
 
 ```typescript
 // app/(auth)/login.tsx
-import Login from '../../src/routes/_auth/login/Login'
+import Login from '../../src/screens/_auth/login/Login'
 
 // src/hooks/useBooks.ts
 import { getBooks } from '../services/books.service'
