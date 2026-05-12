@@ -6,12 +6,13 @@ import { RegisterFormValues } from '../../../types/auth.types';
 import { Button } from '../../../components/Button';
 import { Input } from '../../../components/Input';
 import { LoginHeader } from '../-components/LoginHeader';
+import { formatCpf } from '../../../utils/validators';
 
 export default function Register() {
   const router = useRouter();
   const { submitRegister, isLoading, isSuccess, fieldErrors } = useRegister();
 
-  const [form, setForm] = useState<RegisterFormValues>({ name: '', email: '', password: '' });
+  const [form, setForm] = useState<RegisterFormValues>({ name: '', email: '', cpf: '', password: '' });
 
   useEffect(() => {
     if (isSuccess) {
@@ -68,6 +69,18 @@ export default function Register() {
             autoCorrect={false}
             editable={!isLoading}
             placeholder="seu@email.com"
+          />
+
+          <Input
+            label="CPF"
+            value={form.cpf}
+            onChangeText={(v) => handleChange('cpf', formatCpf(v))}
+            error={fieldErrors.cpf}
+            inputClassName="bg-emerald-700 text-white"
+            placeholderTextColor="#6ee7b7"
+            keyboardType="numeric"
+            editable={!isLoading}
+            placeholder="000.000.000-00"
           />
 
           <Input

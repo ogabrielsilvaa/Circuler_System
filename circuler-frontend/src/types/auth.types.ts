@@ -34,18 +34,21 @@ export type ApiErrorBody = {
 export type RegisterRequest = {
   name: string;
   email: string;
+  cpf: string;
   password: string;
 };
 
 export type RegisterFormValues = {
   name: string;
   email: string;
+  cpf: string;
   password: string;
 };
 
 export type RegisterFieldErrors = {
   name?: string;
   email?: string;
+  cpf?: string;
   password?: string;
   general?: string;
 };
@@ -54,4 +57,5 @@ export type RegisterResponse = {
   id: number;
   name: string;
   email: string;
+  cpf: string;
 };
