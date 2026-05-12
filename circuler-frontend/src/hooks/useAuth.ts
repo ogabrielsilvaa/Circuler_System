@@ -1,9 +1,10 @@
 import { useMutation } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { useState } from 'react';
-import { login } from '../services/auth.service';
+import { login, register } from '../services/auth.service';
 import { useAuthStore } from '../stores/auth.store';
-import { LoginFormValues, LoginFieldErrors, AuthUser, ApiErrorBody } from '../types/auth.types';
+import { LoginFormValues, LoginFieldErrors, AuthUser, ApiErrorBody, RegisterFormValues, RegisterFieldErrors, RegisterRequest } from '../types/auth.types';
+import { hasTwoWords, isValidEmail, isValidPassword } from '../utils/validators';
 
 export function useAuth() {
   const setSession = useAuthStore((state) => state.setSession);
@@ -64,5 +65,49 @@ export function useAuth() {
     clearSession,
     isAuthenticated,
     isHydrating,
+  };
+}
+
+export function useRegister() {
+  const [fieldErrors, setFieldErrors] = useState<RegisterFieldErrors>({});
+
+  const mutation = useMutation({
+    mutationFn: (values: RegisterRequest) => register(values),
+    onSuccess: () => setFieldErrors({}),
+    onError: (error: unknown) => {
+      if (error instanceof AxiosError && error.response) {
+        const body = error.response.data as ApiErrorBody;
+        const message = body?.message ?? 'Erro inesperado.';
+        if (error.response.status === 409) {
+          setFieldErrors({ email: 'Este e-mail já está cadastrado.' });
+          return;
+        }
+        setFieldErrors({ general: message });
+        return;
+      }
+      setFieldErrors({ general: 'Não foi possível conectar ao servidor.' });
+    },
+  });
+
+  function submitRegister(values: RegisterFormValues): void {
+    const errors: RegisterFieldErrors = {};
+    if (!hasTwoWords(values.name)) errors.name = 'Informe nome e sobrenome.';
+    if (!isValidEmail(values.email)) errors.email = 'Informe um e-mail válido.';
+    if (!isValidPassword(values.password)) {
+      errors.password = 'Mínimo 8 caracteres, letra maiúscula, minúscula, número e símbolo.';
+    }
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
+    mutation.mutate(values);
+  }
+
+  return {
+    submitRegister,
+    isLoading: mutation.isPending,
+    isSuccess: mutation.isSuccess,
+    fieldErrors,
   };
 }
