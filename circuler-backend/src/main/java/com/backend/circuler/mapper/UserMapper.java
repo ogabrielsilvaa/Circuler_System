@@ -16,6 +16,7 @@ public class UserMapper {
         User user = new User();
         user.setName(createDTO.getName());
         user.setEmail(createDTO.getEmail());
+        user.setCpf(createDTO.getCpf());
         user.setPassword(createDTO.getPassword());
         user.setStatus(UserStatus.ATIVO);
         return user;
@@ -30,6 +31,7 @@ public class UserMapper {
                 entity.getId(),
                 entity.getName(),
                 entity.getEmail(),
+                entity.getCpf(),
                 entity.getStatus(),
                 roleNames
         );

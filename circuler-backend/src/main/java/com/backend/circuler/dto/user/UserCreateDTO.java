@@ -10,6 +10,9 @@ public class UserCreateDTO {
     @NotBlank(message = "O e-mail é obrigatório")
     private String email;
 
+    @NotBlank(message = "O CPF é obrigatório")
+    private String cpf;
+
     @NotBlank(message = "A senha é obrigatória")
     private String password;
 
@@ -20,6 +23,9 @@ public class UserCreateDTO {
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+
+    public String getCpf() { return cpf; }
+    public void setCpf(String cpf) { this.cpf = cpf; }
 
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }

@@ -42,6 +42,10 @@ public class UserService {
             throw new UnprocessableEntityException("Este e-mail já está em uso.");
         }
 
+        if (repository.existsByCpf(request.getCpf())) {
+            throw new UnprocessableEntityException("Este CPF já está cadastrado.");
+        }
+
         Role userRole = roleRepository.findByName("ROLE_USER")
                 .orElseThrow(() -> new NotFoundException("Role ROLE_USER não encontrada."));
 

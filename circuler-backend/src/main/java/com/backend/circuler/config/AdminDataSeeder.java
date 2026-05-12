@@ -21,6 +21,9 @@ public class AdminDataSeeder implements ApplicationRunner {
     @Value("${admin.password}")
     private String adminPassword;
 
+    @Value("${admin.cpf}")
+    private String adminCpf;
+
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
@@ -51,6 +54,7 @@ public class AdminDataSeeder implements ApplicationRunner {
         User admin = new User();
         admin.setName("Administrador");
         admin.setEmail(adminEmail);
+        admin.setCpf(adminCpf);
         admin.setPassword(passwordEncoder.encode(adminPassword));
         admin.setStatus(UserStatus.ATIVO);
         admin.getRoles().add(adminRole);

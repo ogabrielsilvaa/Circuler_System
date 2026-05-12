@@ -40,7 +40,7 @@ public class UserController {
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserResponseDTO.class))
             ),
             @ApiResponse(responseCode = "400", description = "Campos obrigatórios ausentes ou inválidos no corpo da requisição"),
-            @ApiResponse(responseCode = "422", description = "O e-mail informado já está em uso por outro usuário")
+            @ApiResponse(responseCode = "422", description = "O e-mail ou CPF informado já está em uso por outro usuário")
     })
     public ResponseEntity<UserResponseDTO> create(@Valid @RequestBody UserCreateDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
