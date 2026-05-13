@@ -12,6 +12,7 @@ public class BookInstanceResponseDTO {
     private String bookTitle;
     private String bookAuthor;
     private String bookIsbn;
+    private String bookThumbnailUrl;
     private BookCategory bookCategory;
     private BookInstanceStatus status;
     private Integer collectionPointId;
@@ -24,7 +25,8 @@ public class BookInstanceResponseDTO {
     public BookInstanceResponseDTO() {}
 
     public BookInstanceResponseDTO(Integer id, Integer bookId, String bookTitle, String bookAuthor,
-                                   String bookIsbn, BookCategory bookCategory, BookInstanceStatus status,
+                                   String bookIsbn, String bookThumbnailUrl,
+                                   BookCategory bookCategory, BookInstanceStatus status,
                                    Integer collectionPointId, String collectionPointName,
                                    Integer userDonorId, String userDonorName,
                                    LocalDateTime createdAt, LocalDateTime updatedAt) {
@@ -33,6 +35,7 @@ public class BookInstanceResponseDTO {
         this.bookTitle = bookTitle;
         this.bookAuthor = bookAuthor;
         this.bookIsbn = bookIsbn;
+        this.bookThumbnailUrl = bookThumbnailUrl;
         this.bookCategory = bookCategory;
         this.status = status;
         this.collectionPointId = collectionPointId;
@@ -57,6 +60,9 @@ public class BookInstanceResponseDTO {
 
     public String getBookIsbn() { return bookIsbn; }
     public void setBookIsbn(String bookIsbn) { this.bookIsbn = bookIsbn; }
+
+    public String getBookThumbnailUrl() { return bookThumbnailUrl; }
+    public void setBookThumbnailUrl(String bookThumbnailUrl) { this.bookThumbnailUrl = bookThumbnailUrl; }
 
     public BookCategory getBookCategory() { return bookCategory; }
     public void setBookCategory(BookCategory bookCategory) { this.bookCategory = bookCategory; }

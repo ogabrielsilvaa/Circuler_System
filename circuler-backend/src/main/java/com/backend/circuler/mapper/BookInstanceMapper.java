@@ -17,6 +17,7 @@ public class BookInstanceMapper {
                 entity.getBook().getTitle(),
                 entity.getBook().getAuthor(),
                 entity.getBook().getIsbn(),
+                entity.getBook().getThumbnailUrl(),
                 entity.getBook().getCategory(),
                 entity.getStatus(),
                 entity.getCollectionPoint().getId(),
