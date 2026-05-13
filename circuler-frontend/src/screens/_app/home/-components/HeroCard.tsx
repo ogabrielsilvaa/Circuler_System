@@ -1,12 +1,14 @@
-import { useState } from 'react'
 import { View, Text, TextInput } from 'react-native'
 import { Search } from 'lucide-react-native'
 
-export function HeroCard() {
-  const [query, setQuery] = useState('')
+interface HeroCardProps {
+  searchQuery: string
+  onSearchChange: (text: string) => void
+}
 
+export function HeroCard({ searchQuery, onSearchChange }: HeroCardProps) {
   return (
-    <View className="bg-white rounded-2xl p-5 shadow">
+    <View className="bg-white rounded-2xl p-5 shadow-2xl">
       <Text className="text-2xl font-bold text-black">
         Democratizando a leitura na{' '}
         <Text className="text-emerald-600">Baixada Fluminense</Text>
@@ -22,8 +24,8 @@ export function HeroCard() {
           className="flex-1 py-3 pl-2 text-sm text-black"
           placeholder="Buscar livro..."
           placeholderTextColor="#9ca3af"
-          value={query}
-          onChangeText={setQuery}
+          value={searchQuery}
+          onChangeText={onSearchChange}
         />
       </View>
     </View>
