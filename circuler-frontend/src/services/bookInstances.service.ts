@@ -1,0 +1,7 @@
+import { api } from './api'
+import { BookInstance } from '../types/book.types'
+
+export async function getBookInstances(): Promise<BookInstance[]> {
+  const response = await api.get<BookInstance[]>('/api/book-instances')
+  return response.data
+}

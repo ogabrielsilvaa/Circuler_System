@@ -3,3 +3,18 @@ export enum UserRole {
   ADMIN = 'ROLE_ADMIN',
   ROOT_ADMIN = 'ROLE_ROOT_ADMIN',
 }
+
+export enum BookInstanceStatus {
+  APAGADO    = 'APAGADO',
+  DISPONIVEL = 'DISPONIVEL',
+  RESERVADO  = 'RESERVADO',
+  RETIRADO   = 'RETIRADO',
+  PENDENTE   = 'PENDENTE',
+}
+
+export enum BookCategoryEnum {
+  INFANTIL_JUVENIL = 'INFANTIL_JUVENIL',
+  AUTOAJUDA        = 'AUTOAJUDA',
+  DIDATICO         = 'DIDATICO',
+  ESCOLAR          = 'ESCOLAR',
+}
