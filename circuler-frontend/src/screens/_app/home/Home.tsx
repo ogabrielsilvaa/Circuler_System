@@ -1,17 +1,14 @@
 import { useState, useEffect } from 'react'
-import { ScrollView, View, ActivityIndicator, TouchableOpacity, Text } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { ScrollView, View, ActivityIndicator } from 'react-native'
 import { HeroCard } from './-components/HeroCard'
 import { CategoryFilter } from './-components/CategoryFilter'
 import { BookInstanceList } from './-components/BookInstanceList'
 import { useBookInstances, useBookInstanceSearch, useBookInstancesByCategory } from '../../../hooks/useBookInstances'
-import { useAuthStore } from '../../../stores/auth.store'
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
-  const clearSession = useAuthStore(s => s.clearSession)
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 400)
@@ -42,30 +39,23 @@ export default function Home() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-100">
-      <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
-        <View className="px-4">
-          <View className="items-end mb-2">
-            <TouchableOpacity onPress={clearSession}>
-              <Text className="text-red-500 text-sm font-medium">Sair</Text>
-            </TouchableOpacity>
-          </View>
-          <HeroCard searchQuery={searchQuery} onSearchChange={handleSearchChange} />
-        </View>
-        <View className="mt-6 px-4">
-          <CategoryFilter
-            selected={selectedCategory}
-            onSelect={handleCategorySelect}
-          />
-        </View>
-        <View className="mt-6 px-4">
-          {isLoading ? (
-            <ActivityIndicator size="large" color="#059669" />
-          ) : (
-            <BookInstanceList instances={instances} />
-          )}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <ScrollView className="flex-1 bg-gray-100" contentContainerStyle={{ paddingBottom: 24 }}>
+      <View className="px-4 pt-4">
+        <HeroCard searchQuery={searchQuery} onSearchChange={handleSearchChange} />
+      </View>
+      <View className="mt-6 px-4">
+        <CategoryFilter
+          selected={selectedCategory}
+          onSelect={handleCategorySelect}
+        />
+      </View>
+      <View className="mt-6 px-4">
+        {isLoading ? (
+          <ActivityIndicator size="large" color="#059669" />
+        ) : (
+          <BookInstanceList instances={instances} />
+        )}
+      </View>
+    </ScrollView>
   )
 }
