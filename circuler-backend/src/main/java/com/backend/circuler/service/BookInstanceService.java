@@ -8,6 +8,7 @@ import com.backend.circuler.entity.Book;
 import com.backend.circuler.entity.BookInstance;
 import com.backend.circuler.entity.CollectionPoint;
 import com.backend.circuler.entity.User;
+import com.backend.circuler.enums.BookCategory;
 import com.backend.circuler.enums.BookInstanceStatus;
 import com.backend.circuler.enums.BookStatus;
 import com.backend.circuler.enums.CollectionPointStatus;
@@ -150,6 +151,20 @@ public class BookInstanceService {
         BookInstance instance = repository.findByIdAndStatusNot(id, BookInstanceStatus.APAGADO)
                 .orElseThrow(() -> new NotFoundException("Exemplar não encontrado."));
         return mapper.toDto(instance);
+    }
+
+    public List<BookInstanceResponseDTO> searchByTitle(String title) {
+        return repository.findByBookTitleContainingIgnoreCaseAndStatusNot(title, BookInstanceStatus.APAGADO)
+                .stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<BookInstanceResponseDTO> filterByCategory(BookCategory category) {
+        return repository.findByBookCategoryAndStatusNot(category, BookInstanceStatus.APAGADO)
+                .stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @Transactional

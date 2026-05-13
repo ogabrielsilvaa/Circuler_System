@@ -4,6 +4,7 @@ import com.backend.circuler.dto.bookinstance.BookInstanceCreateDTO;
 import com.backend.circuler.dto.bookinstance.BookInstanceNewBookCreateDTO;
 import com.backend.circuler.dto.bookinstance.BookInstanceResponseDTO;
 import com.backend.circuler.dto.bookinstance.BookInstanceUpdateDTO;
+import com.backend.circuler.enums.BookCategory;
 import com.backend.circuler.service.BookInstanceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -162,6 +163,41 @@ public class BookInstanceController {
     })
     public ResponseEntity<BookInstanceResponseDTO> findById(@PathVariable Integer id) {
         return ResponseEntity.ok(service.findById(id));
+    }
+
+    @GetMapping("/search")
+    @Operation(
+            summary = "Buscar Exemplares por título do livro",
+            description = "Retorna todos os exemplares cujo título do livro contém o termo informado. Busca parcial e insensível a maiúsculas/minúsculas."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Lista retornada com sucesso",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BookInstanceResponseDTO.class))
+            ),
+            @ApiResponse(responseCode = "403", description = "Usuário não autenticado")
+    })
+    public ResponseEntity<List<BookInstanceResponseDTO>> searchByTitle(@RequestParam String title) {
+        return ResponseEntity.ok(service.searchByTitle(title));
+    }
+
+    @GetMapping("/filter")
+    @Operation(
+            summary = "Filtrar Exemplares por categoria do livro",
+            description = "Retorna todos os exemplares cujo livro pertence à categoria informada. Categorias: 1=INFANTIL_JUVENIL, 2=AUTOAJUDA, 3=DIDATICO, 4=ESCOLAR."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Lista retornada com sucesso",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BookInstanceResponseDTO.class))
+            ),
+            @ApiResponse(responseCode = "403", description = "Usuário não autenticado"),
+            @ApiResponse(responseCode = "400", description = "Código de categoria inválido")
+    })
+    public ResponseEntity<List<BookInstanceResponseDTO>> filterByCategory(@RequestParam Integer category) {
+        return ResponseEntity.ok(service.filterByCategory(BookCategory.fromCode(category)));
     }
 
     @PatchMapping("/{id}")
