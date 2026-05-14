@@ -3,6 +3,7 @@ import {
   getBookInstances,
   searchBookInstancesByTitle,
   getBookInstancesByCategory,
+  getBookInstanceById,
 } from '../services/bookInstances.service'
 
 export function useBookInstances() {
@@ -25,5 +26,13 @@ export function useBookInstancesByCategory(category: number | null) {
     queryKey: ['book-instances', 'filter', category],
     queryFn: () => getBookInstancesByCategory(category!),
     enabled: category !== null,
+  })
+}
+
+export function useBookInstanceById(id: number) {
+  return useQuery({
+    queryKey: ['book-instances', id],
+    queryFn: () => getBookInstanceById(id),
+    enabled: !!id,
   })
 }
