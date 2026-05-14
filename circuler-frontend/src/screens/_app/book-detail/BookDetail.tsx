@@ -1,8 +1,9 @@
-import { ScrollView, View, Text, StyleSheet } from 'react-native'
+import { ScrollView, View, Text, StyleSheet, ActivityIndicator } from 'react-native'
 import { Image } from 'expo-image'
 import { BookOpen, MapPin } from 'lucide-react-native'
-import { BookCategoryEnum, BookInstanceStatus } from '../../../constants/enums'
+import { useLocalSearchParams } from 'expo-router'
 import { BOOK_CATEGORIES } from '../../../types/book.types'
+import { useBookInstanceById } from '../../../hooks/useBookInstances'
 
 // StyleSheet necessário: NativeWind não resolve dimensões fixas com overflow-hidden na web
 const styles = StyleSheet.create({
@@ -16,37 +17,36 @@ const styles = StyleSheet.create({
   cover: { flex: 1, width: '100%' },
 })
 
-const MOCK_DETAIL = {
-  id: 1,
-  bookId: 1,
-  bookTitle: 'O Cortiço',
-  bookAuthor: 'Aluísio Azevedo',
-  bookIsbn: '978-8535902776',
-  bookCategory: 'DIDATICO' as BookCategoryEnum,
-  bookDescription:
-    'Um clássico da literatura brasileira que retrata a vida em um cortiço no Rio de Janeiro do século XIX, explorando as relações sociais, os conflitos de classe e a luta pela sobrevivência em um ambiente coletivo e denso.',
-  status: BookInstanceStatus.DISPONIVEL,
-  collectionPointId: 1,
-  collectionPointName: 'Ponto Duque de Caxias Centro',
-  collectionPointAddress: 'Av. Presidente Vargas, 250 - Centro, Duque de Caxias',
-  collectionPointOwnerName: 'João Silva',
-  bookThumbnailUrl: null as string | null,
-  userDonorId: null as number | null,
-  userDonorName: null as string | null,
-  createdAt: '2025-01-10T10:00:00',
-  updatedAt: '2025-01-10T10:00:00',
-}
-
 export default function BookDetail() {
-  const detail = MOCK_DETAIL
+  const { id } = useLocalSearchParams<{ id: string }>()
+  const { data: instance, isLoading, isError } = useBookInstanceById(Number(id))
+
+  if (isLoading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-gray-100">
+        <ActivityIndicator size="large" color="#059669" />
+      </View>
+    )
+  }
+
+  if (isError || !instance) {
+    return (
+      <View className="flex-1 items-center justify-center bg-gray-100 px-4">
+        <Text className="text-base text-gray-500 text-center">
+          Não foi possível carregar o exemplar.
+        </Text>
+      </View>
+    )
+  }
+
   const categoryLabel =
-    BOOK_CATEGORIES.find((c) => c.key === detail.bookCategory)?.label ?? detail.bookCategory
+    BOOK_CATEGORIES.find((c) => c.key === instance.bookCategory)?.label ?? instance.bookCategory
 
   return (
     <ScrollView className="flex-1 bg-gray-100" contentContainerStyle={{ paddingBottom: 32 }}>
       <View style={styles.coverContainer}>
-        {detail.bookThumbnailUrl ? (
-          <Image source={{ uri: detail.bookThumbnailUrl }} style={styles.cover} contentFit="cover" />
+        {instance.bookThumbnailUrl ? (
+          <Image source={{ uri: instance.bookThumbnailUrl }} style={styles.cover} contentFit="cover" />
         ) : (
           <BookOpen size={64} color="#047857" />
         )}
@@ -57,14 +57,9 @@ export default function BookDetail() {
           <Text className="text-xs text-emerald-800">{categoryLabel}</Text>
         </View>
 
-        <Text className="text-xl font-bold text-black">{detail.bookTitle}</Text>
+        <Text className="text-xl font-bold text-black">{instance.bookTitle}</Text>
 
-        <Text className="text-sm text-gray-500">{detail.bookAuthor}</Text>
-
-        <View className="mt-2">
-          <Text className="text-base font-bold text-black">Sobre a obra</Text>
-          <Text className="text-sm text-gray-600 mt-1 leading-relaxed">{detail.bookDescription}</Text>
-        </View>
+        <Text className="text-sm text-gray-500">{instance.bookAuthor}</Text>
 
         <View className="h-px bg-gray-200 my-4" />
 
@@ -75,9 +70,7 @@ export default function BookDetail() {
           </View>
 
           <View className="bg-white rounded-2xl p-4 shadow mt-3">
-            <Text className="text-base font-bold text-black">{detail.collectionPointName}</Text>
-            <Text className="text-sm text-gray-500 mt-1">{detail.collectionPointAddress}</Text>
-            <Text className="text-sm text-gray-400 mt-0.5">{detail.collectionPointOwnerName}</Text>
+            <Text className="text-base font-bold text-black">{instance.collectionPointName}</Text>
           </View>
         </View>
       </View>
