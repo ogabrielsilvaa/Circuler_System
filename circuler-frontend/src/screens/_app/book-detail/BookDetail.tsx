@@ -71,6 +71,10 @@ export default function BookDetail() {
 
           <View className="bg-white rounded-2xl p-4 shadow mt-3">
             <Text className="text-base font-bold text-black">{instance.collectionPointName}</Text>
+            <Text className="text-sm text-gray-500 mt-1">
+              {instance.collectionPointAddressStreet} - {instance.collectionPointAddressNeighborhood}
+            </Text>
+            <Text className="text-sm text-gray-400 mt-0.5">{instance.collectionPointOwnerName}</Text>
           </View>
         </View>
       </View>

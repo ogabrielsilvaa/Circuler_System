@@ -23,6 +23,9 @@ export type BookInstance = {
   status: BookInstanceStatus
   collectionPointId: number
   collectionPointName: string
+  collectionPointAddressStreet: string
+  collectionPointAddressNeighborhood: string
+  collectionPointOwnerName: string
   userDonorId: number | null
   userDonorName: string | null
   bookThumbnailUrl: string | null
