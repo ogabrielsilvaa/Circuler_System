@@ -17,6 +17,9 @@ public class BookInstanceResponseDTO {
     private BookInstanceStatus status;
     private Integer collectionPointId;
     private String collectionPointName;
+    private String collectionPointAddressStreet;
+    private String collectionPointAddressNeighborhood;
+    private String collectionPointOwnerName;
     private Integer userDonorId;
     private String userDonorName;
     private LocalDateTime createdAt;
@@ -28,6 +31,9 @@ public class BookInstanceResponseDTO {
                                    String bookIsbn, String bookThumbnailUrl,
                                    BookCategory bookCategory, BookInstanceStatus status,
                                    Integer collectionPointId, String collectionPointName,
+                                   String collectionPointAddressStreet,
+                                   String collectionPointAddressNeighborhood,
+                                   String collectionPointOwnerName,
                                    Integer userDonorId, String userDonorName,
                                    LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
@@ -40,6 +46,9 @@ public class BookInstanceResponseDTO {
         this.status = status;
         this.collectionPointId = collectionPointId;
         this.collectionPointName = collectionPointName;
+        this.collectionPointAddressStreet = collectionPointAddressStreet;
+        this.collectionPointAddressNeighborhood = collectionPointAddressNeighborhood;
+        this.collectionPointOwnerName = collectionPointOwnerName;
         this.userDonorId = userDonorId;
         this.userDonorName = userDonorName;
         this.createdAt = createdAt;
@@ -75,6 +84,15 @@ public class BookInstanceResponseDTO {
 
     public String getCollectionPointName() { return collectionPointName; }
     public void setCollectionPointName(String collectionPointName) { this.collectionPointName = collectionPointName; }
+
+    public String getCollectionPointAddressStreet() { return collectionPointAddressStreet; }
+    public void setCollectionPointAddressStreet(String collectionPointAddressStreet) { this.collectionPointAddressStreet = collectionPointAddressStreet; }
+
+    public String getCollectionPointAddressNeighborhood() { return collectionPointAddressNeighborhood; }
+    public void setCollectionPointAddressNeighborhood(String collectionPointAddressNeighborhood) { this.collectionPointAddressNeighborhood = collectionPointAddressNeighborhood; }
+
+    public String getCollectionPointOwnerName() { return collectionPointOwnerName; }
+    public void setCollectionPointOwnerName(String collectionPointOwnerName) { this.collectionPointOwnerName = collectionPointOwnerName; }
 
     public Integer getUserDonorId() { return userDonorId; }
     public void setUserDonorId(Integer userDonorId) { this.userDonorId = userDonorId; }
