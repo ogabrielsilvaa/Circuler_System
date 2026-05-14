@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { Image } from 'expo-image'
 import { BookOpen, MapPin } from 'lucide-react-native'
 import { BookInstance } from '../../../../types/book.types'
@@ -18,10 +18,11 @@ const styles = StyleSheet.create({
   thumbnail: { flex: 1, width: '100%' },
 })
 
-type BookInstanceCardProps = { instance: BookInstance }
+type BookInstanceCardProps = { instance: BookInstance; onPress?: () => void }
 
-export function BookInstanceCard({ instance }: BookInstanceCardProps) {
+export function BookInstanceCard({ instance, onPress }: BookInstanceCardProps) {
   return (
+    <TouchableOpacity activeOpacity={0.7} onPress={onPress}>
     <View className="bg-white rounded-2xl p-4 shadow flex-row gap-4">
       <View style={styles.thumbnailContainer}>
         {instance.bookThumbnailUrl ? (
@@ -53,5 +54,6 @@ export function BookInstanceCard({ instance }: BookInstanceCardProps) {
         </View>
       </View>
     </View>
+    </TouchableOpacity>
   )
 }
