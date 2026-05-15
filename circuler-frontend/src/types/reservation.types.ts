@@ -10,6 +10,11 @@ export type ReservationResponse = {
   userId: number
   status: ReservationStatus
   verificationCode: string
+  bookTitle: string
+  bookThumbnailUrl: string | null
+  collectionPointName: string
+  collectionPointAddressStreet: string
+  collectionPointAddressNeighborhood: string
   createdAt: string
   updatedAt: string
 }
