@@ -14,6 +14,9 @@ public class ReservationResponseDTO {
     private String bookAuthor;
     private Integer collectionPointId;
     private String collectionPointName;
+    private String collectionPointAddressStreet;
+    private String collectionPointAddressNeighborhood;
+    private String bookThumbnailUrl;
     private String verificationCode;
     private ReservationStatus status;
     private LocalDateTime createdAt;
@@ -24,7 +27,9 @@ public class ReservationResponseDTO {
     public ReservationResponseDTO(Integer id, Integer userId, String userName,
                                    Integer bookInstanceId, String bookTitle, String bookAuthor,
                                    Integer collectionPointId, String collectionPointName,
-                                   String verificationCode, ReservationStatus status,
+                                   String collectionPointAddressStreet, String collectionPointAddressNeighborhood,
+                                   String bookThumbnailUrl, String verificationCode,
+                                   ReservationStatus status,
                                    LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.userId = userId;
@@ -34,6 +39,9 @@ public class ReservationResponseDTO {
         this.bookAuthor = bookAuthor;
         this.collectionPointId = collectionPointId;
         this.collectionPointName = collectionPointName;
+        this.collectionPointAddressStreet = collectionPointAddressStreet;
+        this.collectionPointAddressNeighborhood = collectionPointAddressNeighborhood;
+        this.bookThumbnailUrl = bookThumbnailUrl;
         this.verificationCode = verificationCode;
         this.status = status;
         this.createdAt = createdAt;
@@ -63,6 +71,15 @@ public class ReservationResponseDTO {
 
     public String getCollectionPointName() { return collectionPointName; }
     public void setCollectionPointName(String collectionPointName) { this.collectionPointName = collectionPointName; }
+
+    public String getCollectionPointAddressStreet() { return collectionPointAddressStreet; }
+    public void setCollectionPointAddressStreet(String collectionPointAddressStreet) { this.collectionPointAddressStreet = collectionPointAddressStreet; }
+
+    public String getCollectionPointAddressNeighborhood() { return collectionPointAddressNeighborhood; }
+    public void setCollectionPointAddressNeighborhood(String collectionPointAddressNeighborhood) { this.collectionPointAddressNeighborhood = collectionPointAddressNeighborhood; }
+
+    public String getBookThumbnailUrl() { return bookThumbnailUrl; }
+    public void setBookThumbnailUrl(String bookThumbnailUrl) { this.bookThumbnailUrl = bookThumbnailUrl; }
 
     public String getVerificationCode() { return verificationCode; }
     public void setVerificationCode(String verificationCode) { this.verificationCode = verificationCode; }
