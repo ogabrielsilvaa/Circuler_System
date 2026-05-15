@@ -1,9 +1,15 @@
+import { useState } from 'react'
 import { ScrollView, View, Text, StyleSheet, ActivityIndicator } from 'react-native'
 import { Image } from 'expo-image'
 import { BookOpen, MapPin } from 'lucide-react-native'
 import { useLocalSearchParams } from 'expo-router'
 import { BOOK_CATEGORIES } from '../../../types/book.types'
+import { BookInstanceStatus } from '../../../constants/enums'
 import { useBookInstanceById } from '../../../hooks/useBookInstances'
+import { useCreateReservation } from '../../../hooks/useReservations'
+import { Button } from '../../../components/Button'
+import { ReservationSuccessModal } from './-components/ReservationSuccessModal'
+import { ReservationErrorModal } from './-components/ReservationErrorModal'
 
 // StyleSheet necessário: NativeWind não resolve dimensões fixas com overflow-hidden na web
 const styles = StyleSheet.create({
@@ -20,6 +26,9 @@ const styles = StyleSheet.create({
 export default function BookDetail() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { data: instance, isLoading, isError } = useBookInstanceById(Number(id))
+  const { mutate, isPending } = useCreateReservation()
+  const [reservationCode, setReservationCode] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   if (isLoading) {
     return (
@@ -42,42 +51,85 @@ export default function BookDetail() {
   const categoryLabel =
     BOOK_CATEGORIES.find((c) => c.key === instance.bookCategory)?.label ?? instance.bookCategory
 
+  function handleReservar() {
+    mutate(
+      { bookInstanceId: instance!.id },
+      {
+        onSuccess: (reservation) => setReservationCode(reservation.verificationCode),
+        onError: (error: unknown) => {
+          const message =
+            (error as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+            'Não foi possível realizar a reserva. Tente novamente.'
+          setErrorMessage(message)
+        },
+      },
+    )
+  }
+
+  const isDisponivel = instance.status === BookInstanceStatus.DISPONIVEL
+
   return (
-    <ScrollView className="flex-1 bg-gray-100" contentContainerStyle={{ paddingBottom: 32 }}>
-      <View style={styles.coverContainer}>
-        {instance.bookThumbnailUrl ? (
-          <Image source={{ uri: instance.bookThumbnailUrl }} style={styles.cover} contentFit="cover" />
-        ) : (
-          <BookOpen size={64} color="#047857" />
-        )}
-      </View>
-
-      <View className="px-4 py-5 gap-3">
-        <View className="bg-emerald-500 self-start rounded-full px-3 py-1">
-          <Text className="text-xs text-emerald-800">{categoryLabel}</Text>
+    <View className="flex-1 bg-gray-100">
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 16 }}>
+        <View style={styles.coverContainer}>
+          {instance.bookThumbnailUrl ? (
+            <Image source={{ uri: instance.bookThumbnailUrl }} style={styles.cover} contentFit="cover" />
+          ) : (
+            <BookOpen size={64} color="#047857" />
+          )}
         </View>
 
-        <Text className="text-xl font-bold text-black">{instance.bookTitle}</Text>
-
-        <Text className="text-sm text-gray-500">{instance.bookAuthor}</Text>
-
-        <View className="h-px bg-gray-200 my-4" />
-
-        <View>
-          <View className="flex-row items-center gap-2">
-            <MapPin size={16} color="#059669" />
-            <Text className="text-base font-bold text-black">Estoque Físico Disponível</Text>
+        <View className="px-4 py-5 gap-3">
+          <View className="bg-emerald-500 self-start rounded-full px-3 py-1">
+            <Text className="text-xs text-emerald-800">{categoryLabel}</Text>
           </View>
 
-          <View className="bg-white rounded-2xl p-4 shadow mt-3">
-            <Text className="text-base font-bold text-black">{instance.collectionPointName}</Text>
-            <Text className="text-sm text-gray-500 mt-1">
-              {instance.collectionPointAddressStreet} - {instance.collectionPointAddressNeighborhood}
-            </Text>
-            <Text className="text-sm text-gray-400 mt-0.5">{instance.collectionPointOwnerName}</Text>
+          <Text className="text-xl font-bold text-black">{instance.bookTitle}</Text>
+
+          <Text className="text-sm text-gray-500">{instance.bookAuthor}</Text>
+
+          <View className="h-px bg-gray-200 my-4" />
+
+          <View>
+            <View className="flex-row items-center gap-2">
+              <MapPin size={16} color="#059669" />
+              <Text className="text-base font-bold text-black">Estoque Físico Disponível</Text>
+            </View>
+
+            <View className="bg-white rounded-2xl p-4 shadow mt-3">
+              <Text className="text-base font-bold text-black">{instance.collectionPointName}</Text>
+              <Text className="text-sm text-gray-500 mt-1">
+                {instance.collectionPointAddressStreet} - {instance.collectionPointAddressNeighborhood}
+              </Text>
+              <Text className="text-sm text-gray-400 mt-0.5">{instance.collectionPointOwnerName}</Text>
+            </View>
           </View>
         </View>
+      </ScrollView>
+
+      <ReservationErrorModal
+        visible={errorMessage !== null}
+        message={errorMessage ?? ''}
+        onClose={() => setErrorMessage(null)}
+      />
+
+      <ReservationSuccessModal
+        visible={reservationCode !== null}
+        verificationCode={reservationCode ?? ''}
+        collectionPointName={instance.collectionPointName}
+        collectionPointAddress={`${instance.collectionPointAddressStreet} - ${instance.collectionPointAddressNeighborhood}`}
+        onClose={() => setReservationCode(null)}
+      />
+
+      <View className="px-4 pb-8 pt-3 bg-gray-100">
+        <Button
+          label={isPending ? 'Reservando...' : isDisponivel ? 'Reservar Exemplar' : 'Exemplar Indisponível'}
+          variant="primary"
+          className={isDisponivel && !isPending ? 'bg-emerald-800' : 'bg-gray-400'}
+          onPress={handleReservar}
+          disabled={isPending || !isDisponivel}
+        />
       </View>
-    </ScrollView>
+    </View>
   )
 }

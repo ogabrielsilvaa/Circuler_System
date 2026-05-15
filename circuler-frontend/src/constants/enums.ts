@@ -18,3 +18,10 @@ export enum BookCategoryEnum {
   DIDATICO         = 'DIDATICO',
   ESCOLAR          = 'ESCOLAR',
 }
+
+export enum ReservationStatus {
+  APAGADA   = 'APAGADA',
+  ATIVA     = 'ATIVA',
+  CONCLUIDA = 'CONCLUIDA',
+  CANCELADA = 'CANCELADA',
+}
