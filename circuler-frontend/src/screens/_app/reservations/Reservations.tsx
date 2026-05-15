@@ -1,13 +1,33 @@
 import { useState } from 'react'
-import { View, Text, FlatList } from 'react-native'
-import { ReservationResponse, MOCK_RESERVATIONS } from '../../../types/reservation.types'
+import { View, Text, FlatList, ActivityIndicator } from 'react-native'
+import { ReservationResponse } from '../../../types/reservation.types'
+import { useMyReservations } from '../../../hooks/useReservations'
 import { ReservationCard } from './-components/ReservationCard'
 import { ReservationDetailModal } from './-components/ReservationDetailModal'
 
 export default function Reservations() {
   const [selectedReservation, setSelectedReservation] = useState<ReservationResponse | null>(null)
+  const { data, isLoading, isError } = useMyReservations()
 
-  const reservations = MOCK_RESERVATIONS
+  if (isLoading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-gray-100">
+        <ActivityIndicator size="large" color="#059669" />
+      </View>
+    )
+  }
+
+  if (isError) {
+    return (
+      <View className="flex-1 items-center justify-center bg-gray-100 px-6">
+        <Text className="text-base text-gray-500 text-center">
+          Não foi possível carregar suas reservas.
+        </Text>
+      </View>
+    )
+  }
+
+  const reservations = data ?? []
 
   return (
     <View className="flex-1 bg-gray-100">
