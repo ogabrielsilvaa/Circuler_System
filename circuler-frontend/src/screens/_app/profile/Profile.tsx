@@ -1,55 +1,39 @@
-import { View, Text, ScrollView } from 'react-native'
+import { View, Text, ScrollView, ActivityIndicator } from 'react-native'
 import { User } from 'lucide-react-native'
 import { useAuthStore } from '../../../stores/auth.store'
 import { Button } from '../../../components/Button'
 import { ProfileInfoRow } from './-components/ProfileInfoRow'
-import { UserResponse, UserStatus } from '../../../types/user.types'
+import { UserStatusBadge } from './-components/UserStatusBadge'
+import { CompletedBooksCover } from './-components/CompletedBooksCover'
+import { useUser } from '../../../hooks/useUser'
+import { useCompletedReservations } from '../../../hooks/useReservations'
+import { formatCpf, formatRole } from '../../../utils/validators'
 import { colors } from '../../../styles/colors'
-
-const MOCK_USER: UserResponse = {
-  id: 1,
-  name: 'Gabriel Silva',
-  email: 'gabriel@email.com',
-  cpf: '12345678900',
-  status: 'ATIVO',
-  roles: ['ROLE_USER'],
-}
-
-function formatCpf(cpf: string): string {
-  return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
-}
-
-function formatRole(roles: string[]): string {
-  if (roles.includes('ROLE_ROOT_ADMIN')) return 'Administrador Raiz'
-  if (roles.includes('ROLE_ADMIN')) return 'Administrador'
-  return 'Usuário'
-}
-
-function UserStatusBadge({ status }: { status: UserStatus }) {
-  if (status === 'ATIVO') {
-    return (
-      <View className="bg-emerald-100 rounded-full px-3 py-0.5 self-start">
-        <Text className="text-xs font-medium text-emerald-800">Ativo</Text>
-      </View>
-    )
-  }
-  if (status === 'INATIVO') {
-    return (
-      <View className="bg-amber-100 rounded-full px-3 py-0.5 self-start">
-        <Text className="text-xs font-medium text-amber-800">Inativo</Text>
-      </View>
-    )
-  }
-  return (
-    <View className="bg-gray-100 rounded-full px-3 py-0.5 self-start">
-      <Text className="text-xs font-medium text-gray-600">Removido</Text>
-    </View>
-  )
-}
 
 export default function Profile() {
   const clearSession = useAuthStore(s => s.clearSession)
-  const user = MOCK_USER
+  const userId = useAuthStore(s => s.user?.id ?? 0)
+
+  const { data: user, isLoading, isError } = useUser(userId)
+  const { data: completedReservations = [], isLoading: isLoadingReservations } = useCompletedReservations()
+
+  if (isLoading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-gray-100">
+        <ActivityIndicator size="large" color={colors.emerald[600]} />
+      </View>
+    )
+  }
+
+  if (isError || !user) {
+    return (
+      <View className="flex-1 items-center justify-center bg-gray-100 px-6">
+        <Text className="text-base text-gray-500 text-center">
+          Não foi possível carregar o perfil.
+        </Text>
+      </View>
+    )
+  }
 
   return (
     <ScrollView className="flex-1 bg-gray-100" contentContainerStyle={{ padding: 24, paddingBottom: 40 }}>
@@ -68,6 +52,15 @@ export default function Profile() {
           <Text className="text-xs text-gray-400 mb-2 font-medium">Status</Text>
           <UserStatusBadge status={user.status} />
         </View>
+      </View>
+
+      <View className="mb-6">
+        <Text className="text-base font-bold text-gray-800 mb-3">Livros Retirados</Text>
+        {isLoadingReservations ? (
+          <ActivityIndicator size="small" color={colors.emerald[600]} />
+        ) : (
+          <CompletedBooksCover reservations={completedReservations} />
+        )}
       </View>
 
       <Button label="Sair" variant="secondary" onPress={clearSession} />
