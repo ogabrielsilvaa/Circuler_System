@@ -31,3 +31,9 @@ export function formatCpf(value: string): string {
 export function isValidCpf(value: string): boolean {
   return stripCpf(value).length === 11;
 }
+
+export function formatRole(roles: string[]): string {
+  if (roles.includes('ROLE_ROOT_ADMIN')) return 'Administrador Raiz';
+  if (roles.includes('ROLE_ADMIN')) return 'Administrador';
+  return 'Usuário';
+}

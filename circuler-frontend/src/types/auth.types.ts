@@ -4,12 +4,14 @@ export type LoginRequest = {
 };
 
 export type LoginResponse = {
+  id: number;
   token: string;
   email: string;
   roles: string[];
 };
 
 export type AuthUser = {
+  id: number;
   email: string;
   roles: string[];
 };

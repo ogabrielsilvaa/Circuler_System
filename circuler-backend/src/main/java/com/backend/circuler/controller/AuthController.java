@@ -2,6 +2,7 @@ package com.backend.circuler.controller;
 
 import com.backend.circuler.dto.auth.LoginRequestDTO;
 import com.backend.circuler.dto.auth.LoginResponseDTO;
+import com.backend.circuler.entity.User;
 import com.backend.circuler.security.CustomUserDetailsService;
 import com.backend.circuler.security.JwtUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,8 +15,6 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -60,14 +59,22 @@ public class AuthController {
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
+        User user = userDetailsService.loadUserEntityByUsername(request.getEmail());
 
-        String token = jwtUtil.generateToken(userDetails);
+        String token = jwtUtil.generateToken(
+                new org.springframework.security.core.userdetails.User(
+                        user.getEmail(),
+                        user.getPassword(),
+                        user.getRoles().stream()
+                                .map(r -> new org.springframework.security.core.authority.SimpleGrantedAuthority(r.getName()))
+                                .collect(Collectors.toList())
+                )
+        );
 
-        List<String> roles = userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
+        List<String> roles = user.getRoles().stream()
+                .map(r -> r.getName())
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(new LoginResponseDTO(token, request.getEmail(), roles));
+        return ResponseEntity.ok(new LoginResponseDTO(user.getId(), token, user.getEmail(), roles));
     }
 }
