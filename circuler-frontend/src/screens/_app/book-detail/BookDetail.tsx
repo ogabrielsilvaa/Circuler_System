@@ -3,6 +3,7 @@ import { ScrollView, View, Text, StyleSheet, ActivityIndicator } from 'react-nat
 import { Image } from 'expo-image'
 import { BookOpen, MapPin } from 'lucide-react-native'
 import { useLocalSearchParams } from 'expo-router'
+import { useQueryClient } from '@tanstack/react-query'
 import { BOOK_CATEGORIES } from '../../../types/book.types'
 import { BookInstanceStatus } from '../../../constants/enums'
 import { useBookInstanceById } from '../../../hooks/useBookInstances'
@@ -25,6 +26,7 @@ const styles = StyleSheet.create({
 
 export default function BookDetail() {
   const { id } = useLocalSearchParams<{ id: string }>()
+  const queryClient = useQueryClient()
   const { data: instance, isLoading, isError } = useBookInstanceById(Number(id))
   const { mutate, isPending } = useCreateReservation()
   const [reservationCode, setReservationCode] = useState<string | null>(null)
@@ -55,7 +57,10 @@ export default function BookDetail() {
     mutate(
       { bookInstanceId: instance!.id },
       {
-        onSuccess: (reservation) => setReservationCode(reservation.verificationCode),
+        onSuccess: (reservation) => {
+          queryClient.invalidateQueries({ queryKey: ['reservations', 'my'] })
+          setReservationCode(reservation.verificationCode)
+        },
         onError: (error: unknown) => {
           const message =
             (error as { response?: { data?: { message?: string } } })?.response?.data?.message ??
