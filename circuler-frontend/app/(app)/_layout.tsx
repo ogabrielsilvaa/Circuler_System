@@ -22,10 +22,11 @@ export default function AppLayout() {
         screenOptions={{ headerShown: false }}
       >
         <Tabs.Screen name="index" />
-        <Tabs.Screen name="search" />
+        <Tabs.Screen name="collection-points" />
         <Tabs.Screen name="reservations" />
         <Tabs.Screen name="profile" />
         <Tabs.Screen name="books/[id]" options={{ href: null }} />
+        <Tabs.Screen name="collection-points/[id]" options={{ href: null }} />
       </Tabs>
     </SafeAreaView>
   );

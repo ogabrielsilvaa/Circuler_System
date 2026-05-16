@@ -25,3 +25,10 @@ export enum ReservationStatus {
   CONCLUIDA = 'CONCLUIDA',
   CANCELADA = 'CANCELADA',
 }
+
+export enum CollectionPointStatus {
+  APAGADO = 'APAGADO',
+  ATIVO   = 'ATIVO',
+  LOTADO  = 'LOTADO',
+  INATIVO = 'INATIVO',
+}
