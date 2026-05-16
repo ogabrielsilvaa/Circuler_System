@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs'
-import { House, Search, BookMarked, User } from 'lucide-react-native'
+import { House, MapPin, BookMarked, User } from 'lucide-react-native'
 
 type TabConfig = {
   name: string
@@ -10,10 +10,10 @@ type TabConfig = {
 }
 
 const TABS: TabConfig[] = [
-  { name: 'index', label: 'Início', Icon: House },
-  { name: 'search', label: 'Busca', Icon: Search },
-  { name: 'reservations', label: 'Reservas', Icon: BookMarked },
-  { name: 'profile', label: 'Perfil', Icon: User },
+  { name: 'index',             label: 'Início',  Icon: House      },
+  { name: 'collection-points', label: 'Pontos',  Icon: MapPin     },
+  { name: 'reservations',      label: 'Reservas', Icon: BookMarked },
+  { name: 'profile',           label: 'Perfil',  Icon: User       },
 ]
 
 export function AppNavbar({ state, navigation }: BottomTabBarProps) {
