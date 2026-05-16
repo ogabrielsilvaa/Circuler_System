@@ -18,7 +18,7 @@ export function useAuth() {
     mutationFn: (values: LoginFormValues) => login(values),
     onSuccess: async (data) => {
       setFieldErrors({});
-      const user: AuthUser = { email: data.email, roles: data.roles };
+      const user: AuthUser = { id: data.id, email: data.email, roles: data.roles };
       await setSession(data.token, user);
     },
     onError: (error: unknown) => {

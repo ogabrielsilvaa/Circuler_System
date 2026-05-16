@@ -23,8 +23,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userRepository.findByEmailAndStatusNot(email, UserStatus.APAGADO)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + email));
+        User user = loadUserEntityByUsername(email);
 
         List<SimpleGrantedAuthority> authorities = user.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority(role.getName()))
@@ -35,5 +34,10 @@ public class CustomUserDetailsService implements UserDetailsService {
                 user.getPassword(),
                 authorities
         );
+    }
+
+    public User loadUserEntityByUsername(String email) throws UsernameNotFoundException {
+        return userRepository.findByEmailAndStatusNot(email, UserStatus.APAGADO)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + email));
     }
 }
