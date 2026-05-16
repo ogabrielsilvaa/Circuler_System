@@ -141,7 +141,8 @@ public class BookInstanceService {
     }
 
     public List<BookInstanceResponseDTO> findAll() {
-        return repository.findAllByStatusNot(BookInstanceStatus.APAGADO)
+        return repository.findAllByStatusNotIn(
+                        List.of(BookInstanceStatus.APAGADO, BookInstanceStatus.RETIRADO, BookInstanceStatus.PENDENTE))
                 .stream()
                 .map(mapper::toDto)
                 .collect(Collectors.toList());
@@ -154,14 +155,18 @@ public class BookInstanceService {
     }
 
     public List<BookInstanceResponseDTO> searchByTitle(String title) {
-        return repository.findByBookTitleContainingIgnoreCaseAndStatusNot(title, BookInstanceStatus.APAGADO)
+        return repository.findByBookTitleContainingIgnoreCaseAndStatusNotIn(
+                        title,
+                        List.of(BookInstanceStatus.APAGADO, BookInstanceStatus.RETIRADO, BookInstanceStatus.PENDENTE))
                 .stream()
                 .map(mapper::toDto)
                 .collect(Collectors.toList());
     }
 
     public List<BookInstanceResponseDTO> filterByCategory(BookCategory category) {
-        return repository.findByBookCategoryAndStatusNot(category, BookInstanceStatus.APAGADO)
+        return repository.findByBookCategoryAndStatusNotIn(
+                        category,
+                        List.of(BookInstanceStatus.APAGADO, BookInstanceStatus.RETIRADO, BookInstanceStatus.PENDENTE))
                 .stream()
                 .map(mapper::toDto)
                 .collect(Collectors.toList());

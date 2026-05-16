@@ -90,7 +90,9 @@ public class CollectionPointService {
                 .orElseThrow(() -> new NotFoundException("Ponto de coleta não encontrado."));
 
         List<BookInstance> instances = bookInstanceRepository
-                .findAllByCollectionPointIdAndStatusNot(id, BookInstanceStatus.APAGADO);
+                .findAllByCollectionPointIdAndStatusNotIn(
+                        id,
+                        List.of(BookInstanceStatus.APAGADO, BookInstanceStatus.RETIRADO, BookInstanceStatus.PENDENTE));
 
         return mapper.toDetailDto(point, instances);
     }

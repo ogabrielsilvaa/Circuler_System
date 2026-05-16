@@ -15,10 +15,6 @@ public interface BookInstanceRepository extends JpaRepository<BookInstance, Inte
 
     Optional<BookInstance> findByIdAndStatusNot(Integer id, BookInstanceStatus status);
 
-    List<BookInstance> findAllByStatusNot(BookInstanceStatus status);
-
-    List<BookInstance> findAllByCollectionPointIdAndStatusNot(Integer collectionPointId, BookInstanceStatus status);
-
     long countByCollectionPointIdAndStatusNot(Integer collectionPointId, BookInstanceStatus status);
 
     List<BookInstance> findAllByStatus(BookInstanceStatus status);
@@ -35,11 +31,22 @@ public interface BookInstanceRepository extends JpaRepository<BookInstance, Inte
     @Query("UPDATE BookInstance bi SET bi.status = :status WHERE bi.id = :id")
     void logicalDeleteById(@Param("id") Integer id, @Param("status") BookInstanceStatus status);
 
-    @Query("SELECT bi FROM BookInstance bi WHERE LOWER(bi.book.title) LIKE LOWER(CONCAT('%', :title, '%')) AND bi.status != :status")
-    List<BookInstance> findByBookTitleContainingIgnoreCaseAndStatusNot(@Param("title") String title,
-                                                                        @Param("status") BookInstanceStatus status);
+    @Query("SELECT bi FROM BookInstance bi WHERE bi.collectionPoint.id = :collectionPointId AND bi.status NOT IN :statuses")
+    List<BookInstance> findAllByCollectionPointIdAndStatusNotIn(
+            @Param("collectionPointId") Integer collectionPointId,
+            @Param("statuses") List<BookInstanceStatus> statuses);
 
-    @Query("SELECT bi FROM BookInstance bi WHERE bi.book.category = :category AND bi.status != :status")
-    List<BookInstance> findByBookCategoryAndStatusNot(@Param("category") BookCategory category,
-                                                       @Param("status") BookInstanceStatus status);
+    @Query("SELECT bi FROM BookInstance bi WHERE bi.status NOT IN :statuses")
+    List<BookInstance> findAllByStatusNotIn(@Param("statuses") List<BookInstanceStatus> statuses);
+
+    @Query("SELECT bi FROM BookInstance bi WHERE LOWER(bi.book.title) LIKE LOWER(CONCAT('%', :title, '%')) AND bi.status NOT IN :statuses")
+    List<BookInstance> findByBookTitleContainingIgnoreCaseAndStatusNotIn(
+            @Param("title") String title,
+            @Param("statuses") List<BookInstanceStatus> statuses);
+
+    @Query("SELECT bi FROM BookInstance bi WHERE bi.book.category = :category AND bi.status NOT IN :statuses")
+    List<BookInstance> findByBookCategoryAndStatusNotIn(
+            @Param("category") BookCategory category,
+            @Param("statuses") List<BookInstanceStatus> statuses);
+
 }
