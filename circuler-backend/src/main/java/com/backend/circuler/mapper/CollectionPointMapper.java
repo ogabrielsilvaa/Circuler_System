@@ -55,7 +55,8 @@ public class CollectionPointMapper {
                 entity.getBook().getCategory(),
                 entity.getStatus(),
                 donorId,
-                donorName
+                donorName,
+                entity.getBook().getThumbnailUrl()
         );
     }
 

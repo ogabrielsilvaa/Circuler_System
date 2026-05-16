@@ -13,12 +13,13 @@ public class CollectionPointBookDTO {
     private BookInstanceStatus status;
     private Integer userDonorId;
     private String userDonorName;
+    private String bookThumbnailUrl;
 
     public CollectionPointBookDTO() {}
 
     public CollectionPointBookDTO(Integer id, Integer bookId, String bookTitle, String bookAuthor,
                                   BookCategory bookCategory, BookInstanceStatus status,
-                                  Integer userDonorId, String userDonorName) {
+                                  Integer userDonorId, String userDonorName, String bookThumbnailUrl) {
         this.id = id;
         this.bookId = bookId;
         this.bookTitle = bookTitle;
@@ -27,6 +28,7 @@ public class CollectionPointBookDTO {
         this.status = status;
         this.userDonorId = userDonorId;
         this.userDonorName = userDonorName;
+        this.bookThumbnailUrl = bookThumbnailUrl;
     }
 
     public Integer getId() { return id; }
@@ -52,4 +54,7 @@ public class CollectionPointBookDTO {
 
     public String getUserDonorName() { return userDonorName; }
     public void setUserDonorName(String userDonorName) { this.userDonorName = userDonorName; }
+
+    public String getBookThumbnailUrl() { return bookThumbnailUrl; }
+    public void setBookThumbnailUrl(String bookThumbnailUrl) { this.bookThumbnailUrl = bookThumbnailUrl; }
 }
