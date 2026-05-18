@@ -1,6 +1,8 @@
 package com.backend.circuler.service;
 
+import com.backend.circuler.dto.bookinstance.BookInstanceApproveDonationDTO;
 import com.backend.circuler.dto.bookinstance.BookInstanceCreateDTO;
+import com.backend.circuler.dto.bookinstance.BookInstanceDonateDTO;
 import com.backend.circuler.dto.bookinstance.BookInstanceNewBookCreateDTO;
 import com.backend.circuler.dto.bookinstance.BookInstanceResponseDTO;
 import com.backend.circuler.dto.bookinstance.BookInstanceUpdateDTO;
@@ -12,16 +14,16 @@ import com.backend.circuler.enums.BookCategory;
 import com.backend.circuler.enums.BookInstanceStatus;
 import com.backend.circuler.enums.BookStatus;
 import com.backend.circuler.enums.CollectionPointStatus;
+import com.backend.circuler.enums.ReservationStatus;
 import com.backend.circuler.enums.UserStatus;
-import com.backend.circuler.exception.ForbiddenException;
 import com.backend.circuler.exception.NotFoundException;
 import com.backend.circuler.exception.UnprocessableEntityException;
 import com.backend.circuler.mapper.BookInstanceMapper;
 import com.backend.circuler.repository.BookInstanceRepository;
 import com.backend.circuler.repository.BookRepository;
 import com.backend.circuler.repository.CollectionPointRepository;
+import com.backend.circuler.repository.ReservationRepository;
 import com.backend.circuler.repository.UserRepository;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,17 +38,23 @@ public class BookInstanceService {
     private final BookRepository bookRepository;
     private final CollectionPointRepository collectionPointRepository;
     private final UserRepository userRepository;
+    private final ReservationRepository reservationRepository;
+    private final AuthorizationService authorizationService;
 
     public BookInstanceService(BookInstanceRepository repository,
                                BookInstanceMapper mapper,
                                BookRepository bookRepository,
                                CollectionPointRepository collectionPointRepository,
-                               UserRepository userRepository) {
+                               UserRepository userRepository,
+                               ReservationRepository reservationRepository,
+                               AuthorizationService authorizationService) {
         this.repository = repository;
         this.mapper = mapper;
         this.bookRepository = bookRepository;
         this.collectionPointRepository = collectionPointRepository;
         this.userRepository = userRepository;
+        this.reservationRepository = reservationRepository;
+        this.authorizationService = authorizationService;
     }
 
     @Transactional
@@ -89,6 +97,41 @@ public class BookInstanceService {
         return mapper.toDto(repository.save(instance));
     }
 
+    @Transactional
+    public BookInstanceResponseDTO donate(BookInstanceDonateDTO request) {
+        CollectionPoint point = collectionPointRepository
+                .findByIdAndStatusNot(request.getCollectionPointId(), CollectionPointStatus.APAGADO)
+                .orElseThrow(() -> new NotFoundException("Ponto de coleta não encontrado."));
+
+        if (point.getStatus() != CollectionPointStatus.ATIVO) {
+            throw new UnprocessableEntityException("O ponto de coleta não está aceitando doações no momento.");
+        }
+
+        checkCapacity(point);
+
+        String currentEmail = authorizationService.resolveCurrentEmail();
+        User donor = userRepository.findByEmailAndStatusNot(currentEmail, UserStatus.APAGADO)
+                .orElseThrow(() -> new NotFoundException("Usuário autenticado não encontrado."));
+
+        Book book = new Book();
+        book.setTitle(request.getBookTitle());
+        book.setAuthor(request.getBookAuthor());
+        book.setPublisher(request.getBookPublisher());
+        book.setThumbnailUrl(request.getBookThumbnailUrl());
+        book.setCategory(request.getBookCategory());
+        book.setIsbn(request.getBookIsbn());
+        book.setStatus(BookStatus.PENDENTE);
+        book = bookRepository.save(book);
+
+        BookInstance instance = new BookInstance();
+        instance.setBook(book);
+        instance.setCollectionPoint(point);
+        instance.setUserDonor(donor);
+        instance.setStatus(BookInstanceStatus.PENDENTE);
+
+        return mapper.toDto(repository.save(instance));
+    }
+
     public List<BookInstanceResponseDTO> findAllPending() {
         return repository.findAllByStatus(BookInstanceStatus.PENDENTE)
                 .stream()
@@ -99,6 +142,14 @@ public class BookInstanceService {
     public List<BookInstanceResponseDTO> findPendingForMyPoint() {
         CollectionPoint point = resolveMyPoint();
         return repository.findAllByCollectionPointIdAndStatus(point.getId(), BookInstanceStatus.PENDENTE)
+                .stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<BookInstanceResponseDTO> findAllForMyPoint() {
+        CollectionPoint point = resolveMyPoint();
+        return repository.findAllByCollectionPointIdAndStatusNot(point.getId(), BookInstanceStatus.APAGADO)
                 .stream()
                 .map(mapper::toDto)
                 .collect(Collectors.toList());
@@ -122,7 +173,7 @@ public class BookInstanceService {
     }
 
     private CollectionPoint resolveMyPoint() {
-        String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        String currentEmail = authorizationService.resolveCurrentEmail();
         return collectionPointRepository.findByUserAdminEmailAndStatusNot(currentEmail, CollectionPointStatus.APAGADO)
                 .orElseThrow(() -> new UnprocessableEntityException("Você não é responsável por nenhum ponto de coleta ativo."));
     }
@@ -177,12 +228,45 @@ public class BookInstanceService {
         BookInstance existing = repository.findByIdAndStatusNot(id, BookInstanceStatus.APAGADO)
                 .orElseThrow(() -> new NotFoundException("Exemplar não encontrado."));
 
-        checkOwnership(existing);
+        authorizationService.assertCanManageBookInstance(existing);
 
         if (request.getStatus() != null) {
             existing.setStatus(request.getStatus());
         }
 
+        Book book = existing.getBook();
+        if (request.getBookThumbnailUrl() != null) {
+            book.setThumbnailUrl(request.getBookThumbnailUrl());
+        }
+        if (request.getBookIsbn() != null) {
+            book.setIsbn(request.getBookIsbn());
+        }
+        bookRepository.save(book);
+
+        return mapper.toDto(repository.save(existing));
+    }
+
+    @Transactional
+    public BookInstanceResponseDTO approveDonation(Integer id, BookInstanceApproveDonationDTO request) {
+        BookInstance existing = repository.findByIdAndStatusNot(id, BookInstanceStatus.APAGADO)
+                .orElseThrow(() -> new NotFoundException("Exemplar não encontrado."));
+
+        authorizationService.assertCanManageBookInstance(existing);
+
+        if (existing.getStatus() != BookInstanceStatus.PENDENTE) {
+            throw new UnprocessableEntityException("Este exemplar não está pendente de aprovação.");
+        }
+
+        Book book = existing.getBook();
+        if (request.getBookThumbnailUrl() != null) {
+            book.setThumbnailUrl(request.getBookThumbnailUrl());
+        }
+        if (request.getBookIsbn() != null) {
+            book.setIsbn(request.getBookIsbn());
+        }
+        bookRepository.save(book);
+
+        existing.setStatus(BookInstanceStatus.DISPONIVEL);
         return mapper.toDto(repository.save(existing));
     }
 
@@ -191,21 +275,12 @@ public class BookInstanceService {
         BookInstance existing = repository.findByIdAndStatusNot(id, BookInstanceStatus.APAGADO)
                 .orElseThrow(() -> new NotFoundException("Exemplar não encontrado."));
 
-        checkOwnership(existing);
+        authorizationService.assertCanManageBookInstance(existing);
+
+        reservationRepository.findByBookInstanceIdAndStatus(id, ReservationStatus.ATIVA)
+                .ifPresent(reservation ->
+                        reservationRepository.logicalDeleteById(reservation.getId(), ReservationStatus.CANCELADA));
 
         repository.logicalDeleteById(id, BookInstanceStatus.APAGADO);
-    }
-
-    private void checkOwnership(BookInstance instance) {
-        String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userRepository.findByEmailAndStatusNot(currentEmail, UserStatus.APAGADO)
-                .orElseThrow(() -> new NotFoundException("Usuário autenticado não encontrado."));
-
-        boolean isRootAdmin = currentUser.getRoles().stream()
-                .anyMatch(role -> "ROLE_ROOT_ADMIN".equals(role.getName()));
-
-        if (!isRootAdmin && !instance.getCollectionPoint().getUserAdmin().getEmail().equals(currentEmail)) {
-            throw new ForbiddenException("Você não tem permissão para gerenciar exemplares deste ponto de coleta.");
-        }
     }
 }
