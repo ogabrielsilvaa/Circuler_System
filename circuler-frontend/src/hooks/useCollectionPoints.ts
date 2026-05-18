@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
-import { getCollectionPoints, getCollectionPointDetail } from '../services/collection-points.service'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { donateBook, getCollectionPoints, getCollectionPointDetail } from '../services/collection-points.service'
 
 export function useCollectionPoints() {
   return useQuery({ queryKey: ['collection-points'], queryFn: getCollectionPoints })
@@ -11,4 +11,8 @@ export function useCollectionPointDetail(id: number) {
     queryFn: () => getCollectionPointDetail(id),
     enabled: !!id,
   })
+}
+
+export function useDonateBook() {
+  return useMutation({ mutationFn: donateBook })
 }
