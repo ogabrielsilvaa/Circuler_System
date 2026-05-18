@@ -57,6 +57,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/book-instances/pending").hasRole("ROOT_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/book-instances/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/book-instances/point/**").hasRole("ROOT_ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/book-instances/donate").authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/api/book-instances/*/approve-donation").hasRole("ADMIN")
                         .requestMatchers("/api/book-instances/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/reservations/all").hasRole("ROOT_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/reservations/my-point").hasRole("ADMIN")
