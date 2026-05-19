@@ -3,6 +3,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { useFonts } from 'expo-font';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import { useAuthStore } from '../src/stores/auth.store';
 import 'react-native-reanimated';
 import '../src/styles/global.css';
@@ -11,7 +12,18 @@ export { ErrorBoundary } from 'expo-router';
 
 SplashScreen.preventAutoHideAsync();
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error) => {
+        if (error instanceof AxiosError && error.response && error.response.status < 500) {
+          return false;
+        }
+        return failureCount < 3;
+      },
+    },
+  },
+});
 
 export default function RootLayout() {
   const hydrateFromStorage = useAuthStore((state) => state.hydrateFromStorage);
