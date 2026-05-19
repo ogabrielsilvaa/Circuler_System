@@ -10,16 +10,12 @@ import com.backend.circuler.entity.User;
 import com.backend.circuler.enums.BookInstanceStatus;
 import com.backend.circuler.enums.CollectionPointStatus;
 import com.backend.circuler.enums.ReservationStatus;
-import com.backend.circuler.enums.UserStatus;
-import com.backend.circuler.exception.ForbiddenException;
 import com.backend.circuler.exception.NotFoundException;
 import com.backend.circuler.exception.UnprocessableEntityException;
 import com.backend.circuler.mapper.ReservationMapper;
 import com.backend.circuler.repository.BookInstanceRepository;
 import com.backend.circuler.repository.CollectionPointRepository;
 import com.backend.circuler.repository.ReservationRepository;
-import com.backend.circuler.repository.UserRepository;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,24 +29,24 @@ public class ReservationService {
     private final ReservationRepository repository;
     private final BookInstanceRepository bookInstanceRepository;
     private final CollectionPointRepository collectionPointRepository;
-    private final UserRepository userRepository;
     private final ReservationMapper mapper;
+    private final AuthorizationService authorizationService;
 
     public ReservationService(ReservationRepository repository,
                                BookInstanceRepository bookInstanceRepository,
                                CollectionPointRepository collectionPointRepository,
-                               UserRepository userRepository,
-                               ReservationMapper mapper) {
+                               ReservationMapper mapper,
+                               AuthorizationService authorizationService) {
         this.repository = repository;
         this.bookInstanceRepository = bookInstanceRepository;
         this.collectionPointRepository = collectionPointRepository;
-        this.userRepository = userRepository;
         this.mapper = mapper;
+        this.authorizationService = authorizationService;
     }
 
     @Transactional
     public ReservationResponseDTO create(ReservationCreateDTO request) {
-        User currentUser = resolveCurrentUser();
+        User currentUser = authorizationService.resolveCurrentUser();
 
         BookInstance bookInstance = bookInstanceRepository
                 .findByIdAndStatusNot(request.getBookInstanceId(), BookInstanceStatus.APAGADO)
@@ -87,7 +83,7 @@ public class ReservationService {
 
     @Transactional(readOnly = true)
     public List<ReservationResponseDTO> findAllByMyPoint() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        String email = authorizationService.resolveCurrentEmail();
         CollectionPoint point = collectionPointRepository
                 .findByUserAdminEmailAndStatusNot(email, CollectionPointStatus.APAGADO)
                 .orElseThrow(() -> new UnprocessableEntityException("Você não é responsável por nenhum ponto de coleta ativo."));
@@ -98,7 +94,7 @@ public class ReservationService {
 
     @Transactional(readOnly = true)
     public List<ReservationResponseDTO> findAllMyOwn() {
-        User currentUser = resolveCurrentUser();
+        User currentUser = authorizationService.resolveCurrentUser();
         return repository.findAllByUserIdAndStatusNot(currentUser.getId(), ReservationStatus.APAGADA)
                 .stream().map(mapper::toDto).collect(Collectors.toList());
     }
@@ -108,7 +104,7 @@ public class ReservationService {
         Reservation reservation = repository.findByIdAndStatusNot(id, ReservationStatus.APAGADA)
                 .orElseThrow(() -> new NotFoundException("Reserva não encontrada."));
 
-        checkReadOwnership(reservation);
+        authorizationService.assertCanReadReservation(reservation);
 
         return mapper.toDto(reservation);
     }
@@ -148,37 +144,5 @@ public class ReservationService {
                 .orElseThrow(() -> new NotFoundException("Reserva não encontrada."));
 
         repository.logicalDeleteById(reservation.getId(), ReservationStatus.APAGADA);
-    }
-
-    private User resolveCurrentUser() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByEmailAndStatusNot(email, UserStatus.APAGADO)
-                .orElseThrow(() -> new NotFoundException("Usuário autenticado não encontrado."));
-    }
-
-    private boolean hasRole(User user, String roleName) {
-        return user.getRoles().stream().anyMatch(role -> roleName.equals(role.getName()));
-    }
-
-    private void checkReadOwnership(Reservation reservation) {
-        User currentUser = resolveCurrentUser();
-
-        if (hasRole(currentUser, "ROLE_ROOT_ADMIN")) {
-            return;
-        }
-
-        if (hasRole(currentUser, "ROLE_ADMIN")) {
-            String adminEmail = currentUser.getEmail();
-            String pointAdminEmail = reservation.getBookInstance().getCollectionPoint().getUserAdmin().getEmail();
-            if (adminEmail.equals(pointAdminEmail)) {
-                return;
-            }
-        }
-
-        if (reservation.getUser().getId().equals(currentUser.getId())) {
-            return;
-        }
-
-        throw new ForbiddenException("Você não tem permissão para acessar esta reserva.");
     }
 }

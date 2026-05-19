@@ -1,6 +1,8 @@
 package com.backend.circuler.controller;
 
+import com.backend.circuler.dto.bookinstance.BookInstanceApproveDonationDTO;
 import com.backend.circuler.dto.bookinstance.BookInstanceCreateDTO;
+import com.backend.circuler.dto.bookinstance.BookInstanceDonateDTO;
 import com.backend.circuler.dto.bookinstance.BookInstanceNewBookCreateDTO;
 import com.backend.circuler.dto.bookinstance.BookInstanceResponseDTO;
 import com.backend.circuler.dto.bookinstance.BookInstanceUpdateDTO;
@@ -28,6 +30,28 @@ public class BookInstanceController {
 
     public BookInstanceController(BookInstanceService service) {
         this.service = service;
+    }
+
+    @PostMapping("/donate")
+    @Operation(
+            summary = "Doar um livro novo para um Ponto de Coleta",
+            description = """
+                    Permite que qualquer usuário autenticado doe um livro novo para um Ponto de Coleta ativo.
+                    O livro é criado com status PENDENTE e o exemplar também fica PENDENTE até que o Admin responsável pelo ponto o aprove via PATCH /api/book-instances/{id}."""
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Doação registrada com sucesso — livro e exemplar criados com status PENDENTE",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BookInstanceResponseDTO.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Campos obrigatórios ausentes ou em branco"),
+            @ApiResponse(responseCode = "403", description = "Usuário não autenticado"),
+            @ApiResponse(responseCode = "404", description = "Ponto de coleta não encontrado"),
+            @ApiResponse(responseCode = "422", description = "Ponto de coleta não está ativo | Ponto de coleta atingiu a capacidade máxima")
+    })
+    public ResponseEntity<BookInstanceResponseDTO> donate(@Valid @RequestBody BookInstanceDonateDTO request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.donate(request));
     }
 
     @PostMapping("/point/{pointId}")
@@ -130,10 +154,41 @@ public class BookInstanceController {
         return ResponseEntity.ok(service.findPendingForMyPoint());
     }
 
+    @GetMapping("/my-point")
+    @Operation(
+            summary = "ADMIN - Listar todos os Exemplares do meu Ponto de Coleta",
+            description = """
+                    Perspectiva de gestão: retorna todos os exemplares vinculados ao Ponto de Coleta \
+                    administrado pelo usuário autenticado, com qualquer status ativo — DISPONIVEL, RESERVADO, \
+                    RETIRADO e PENDENTE. Exemplares excluídos (APAGADO) são omitidos. \
+                    Use este endpoint para ter visibilidade completa do acervo do seu ponto, \
+                    incluindo exemplares em trânsito ou aguardando aprovação.
+                    Para o catálogo público de exemplares disponíveis para reserva, \
+                    use GET /api/book-instances."""
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Lista retornada com sucesso",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BookInstanceResponseDTO.class))
+            ),
+            @ApiResponse(responseCode = "403", description = "Usuário não possui ROLE_ADMIN"),
+            @ApiResponse(responseCode = "422", description = "Admin não é responsável por nenhum ponto de coleta ativo")
+    })
+    public ResponseEntity<List<BookInstanceResponseDTO>> findAllForMyPoint() {
+        return ResponseEntity.ok(service.findAllForMyPoint());
+    }
+
     @GetMapping
     @Operation(
-            summary = "Listar todos os Exemplares",
-            description = "Retorna todos os exemplares com status diferente de APAGADO."
+            summary = "Listar Exemplares disponíveis (catálogo público)",
+            description = """
+                    Perspectiva de catálogo: retorna todos os exemplares com status DISPONIVEL ou RESERVADO \
+                    de todos os Pontos de Coleta do sistema, visíveis para qualquer usuário autenticado. \
+                    Exemplares com status APAGADO, RETIRADO e PENDENTE são omitidos intencionalmente — \
+                    eles não estão acessíveis para reserva.
+                    Para visualizar todos os exemplares do seu ponto (incluindo RETIRADO e PENDENTE), \
+                    use GET /api/book-instances/my-point (requer ROLE_ADMIN)."""
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -203,7 +258,10 @@ public class BookInstanceController {
     @PatchMapping("/{id}")
     @Operation(
             summary = "ADMIN / ADMIN RAIZ - Atualizar Exemplar",
-            description = "Atualiza o status de um exemplar. O Admin Raiz pode atualizar qualquer exemplar; o Admin comum somente os do seu ponto de coleta."
+            description = """
+                    Atualiza campos de um exemplar e do livro associado. Campos disponíveis: status (BookInstanceStatus), bookThumbnailUrl, bookIsbn.
+                    Todos os campos são opcionais — apenas os campos não-nulos serão atualizados.
+                    O Admin Raiz pode atualizar qualquer exemplar; o Admin comum somente os do seu ponto de coleta."""
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -220,10 +278,34 @@ public class BookInstanceController {
         return ResponseEntity.ok(service.update(id, request));
     }
 
+    @PatchMapping("/{id}/approve-donation")
+    @Operation(
+            summary = "ADMIN / ADMIN RAIZ - Aprovar doação de Exemplar",
+            description = """
+                    Aprova um exemplar doado por um usuário comum, movendo seu status de PENDENTE para DISPONIVEL.
+                    Permite informar opcionalmente a URL da capa (bookThumbnailUrl) e o ISBN do livro.
+                    O Admin comum só pode aprovar exemplares do seu ponto de coleta."""
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Doação aprovada com sucesso — exemplar agora DISPONIVEL",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BookInstanceResponseDTO.class))
+            ),
+            @ApiResponse(responseCode = "403", description = "Usuário não possui ROLE_ADMIN | Admin não é responsável por este exemplar"),
+            @ApiResponse(responseCode = "404", description = "Exemplar não encontrado"),
+            @ApiResponse(responseCode = "422", description = "Exemplar não está com status PENDENTE")
+    })
+    public ResponseEntity<BookInstanceResponseDTO> approveDonation(
+            @PathVariable Integer id,
+            @RequestBody BookInstanceApproveDonationDTO request) {
+        return ResponseEntity.ok(service.approveDonation(id, request));
+    }
+
     @DeleteMapping("/{id}")
     @Operation(
             summary = "ADMIN / ADMIN RAIZ - Remover Exemplar",
-            description = "Realiza a exclusão lógica de um exemplar, marcando-o como APAGADO. O Admin Raiz pode remover qualquer exemplar; o Admin comum somente os do seu ponto de coleta."
+            description = "Realiza a exclusão lógica de um exemplar, marcando-o como APAGADO. O Admin Raiz pode remover qualquer exemplar; o Admin comum somente os do seu ponto de coleta. Se houver uma reserva deste exemplar, ela será cancelada."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Exemplar removido com sucesso"),

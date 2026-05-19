@@ -1,17 +1,11 @@
 package com.backend.circuler.dto.bookinstance;
 
-import com.backend.circuler.enums.BookInstanceStatus;
+public class BookInstanceApproveDonationDTO {
 
-public class BookInstanceUpdateDTO {
-
-    private BookInstanceStatus status;
     private String bookThumbnailUrl;
     private String bookIsbn;
 
-    public BookInstanceUpdateDTO() {}
-
-    public BookInstanceStatus getStatus() { return status; }
-    public void setStatus(BookInstanceStatus status) { this.status = status; }
+    public BookInstanceApproveDonationDTO() {}
 
     public String getBookThumbnailUrl() { return bookThumbnailUrl; }
     public void setBookThumbnailUrl(String bookThumbnailUrl) { this.bookThumbnailUrl = bookThumbnailUrl; }

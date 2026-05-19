@@ -10,14 +10,12 @@ import com.backend.circuler.entity.User;
 import com.backend.circuler.enums.BookInstanceStatus;
 import com.backend.circuler.enums.CollectionPointStatus;
 import com.backend.circuler.enums.UserStatus;
-import com.backend.circuler.exception.ForbiddenException;
 import com.backend.circuler.exception.NotFoundException;
 import com.backend.circuler.exception.UnprocessableEntityException;
 import com.backend.circuler.mapper.CollectionPointMapper;
 import com.backend.circuler.repository.BookInstanceRepository;
 import com.backend.circuler.repository.CollectionPointRepository;
 import com.backend.circuler.repository.UserRepository;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,28 +29,23 @@ public class CollectionPointService {
     private final CollectionPointMapper mapper;
     private final UserRepository userRepository;
     private final BookInstanceRepository bookInstanceRepository;
+    private final AuthorizationService authorizationService;
 
     public CollectionPointService(CollectionPointRepository repository,
                                   CollectionPointMapper mapper,
                                   UserRepository userRepository,
-                                  BookInstanceRepository bookInstanceRepository) {
+                                  BookInstanceRepository bookInstanceRepository,
+                                  AuthorizationService authorizationService) {
         this.repository = repository;
         this.mapper = mapper;
         this.userRepository = userRepository;
         this.bookInstanceRepository = bookInstanceRepository;
+        this.authorizationService = authorizationService;
     }
 
     @Transactional
     public CollectionPointResponseDTO create(CollectionPointCreateDTO request) {
-        String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userRepository.findByEmailAndStatusNot(currentEmail, UserStatus.APAGADO)
-                .orElseThrow(() -> new NotFoundException("Usuário autenticado não encontrado."));
-
-        boolean isRootAdmin = currentUser.getRoles().stream()
-                .anyMatch(role -> "ROLE_ROOT_ADMIN".equals(role.getName()));
-        if (!isRootAdmin) {
-            throw new ForbiddenException("Apenas o administrador raiz pode criar pontos de coleta.");
-        }
+        authorizationService.assertIsRootAdmin();
 
         User userAdmin = userRepository.findByIdAndStatusNot(request.getUserAdminId(), UserStatus.APAGADO)
                 .orElseThrow(() -> new NotFoundException("Usuário responsável não encontrado ou inativo."));
@@ -102,16 +95,9 @@ public class CollectionPointService {
         CollectionPoint existing = repository.findByIdAndStatusNot(id, CollectionPointStatus.APAGADO)
                 .orElseThrow(() -> new NotFoundException("Ponto de coleta não encontrado."));
 
-        String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userRepository.findByEmailAndStatusNot(currentEmail, UserStatus.APAGADO)
-                .orElseThrow(() -> new NotFoundException("Usuário autenticado não encontrado."));
-
-        boolean isRootAdmin = currentUser.getRoles().stream()
-                .anyMatch(role -> "ROLE_ROOT_ADMIN".equals(role.getName()));
-
-        if (!isRootAdmin && !existing.getUserAdmin().getId().equals(currentUser.getId())) {
-            throw new ForbiddenException("Você não é o responsável por este ponto de coleta.");
-        }
+        authorizationService.assertCanManageCollectionPoint(existing);
+        User currentUser = authorizationService.resolveCurrentUser();
+        boolean isRootAdmin = authorizationService.hasRole(currentUser, "ROLE_ROOT_ADMIN");
 
         if (request.getName() != null && !request.getName().isBlank()) {
             existing.setName(request.getName());
@@ -153,7 +139,7 @@ public class CollectionPointService {
                 throw new UnprocessableEntityException("Utilize o endpoint de exclusão para apagar um ponto de coleta.");
             }
             if (!isRootAdmin && request.getStatus() == CollectionPointStatus.INATIVO) {
-                throw new ForbiddenException("Apenas o administrador raiz pode inativar um ponto de coleta.");
+                throw new UnprocessableEntityException("Apenas o administrador raiz pode inativar um ponto de coleta.");
             }
             existing.setStatus(request.getStatus());
         }

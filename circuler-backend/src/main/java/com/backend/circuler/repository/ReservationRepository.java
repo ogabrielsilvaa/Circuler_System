@@ -20,6 +20,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Intege
 
     List<Reservation> findAllByBookInstanceCollectionPointIdAndStatusNot(Integer collectionPointId, ReservationStatus status);
 
+    Optional<Reservation> findByBookInstanceIdAndStatus(Integer bookInstanceId, ReservationStatus status);
+
     boolean existsByBookInstanceIdAndStatus(Integer bookInstanceId, ReservationStatus status);
 
     @Modifying
