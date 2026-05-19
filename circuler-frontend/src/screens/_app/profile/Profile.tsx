@@ -27,10 +27,11 @@ export default function Profile() {
 
   if (isError || !user) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-100 px-6">
+      <View className="flex-1 items-center justify-center bg-gray-100 px-6 gap-4">
         <Text className="text-base text-gray-500 text-center">
           Não foi possível carregar o perfil.
         </Text>
+        <Button label="Sair" variant="secondary" onPress={clearSession} />
       </View>
     )
   }
