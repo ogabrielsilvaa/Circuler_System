@@ -1,4 +1,4 @@
-import { BookCategoryEnum, BookInstanceStatus, CollectionPointStatus } from '../constants/enums'
+import { BookInstanceStatus, CollectionPointStatus } from '../constants/enums'
 
 export type CollectionPoint = {
   id: number
@@ -19,11 +19,20 @@ export type CollectionPointBook = {
   bookId: number
   bookTitle: string
   bookAuthor: string
-  bookCategory: BookCategoryEnum
+  bookCategory: string
   status: BookInstanceStatus
   userDonorId: number | null
   userDonorName: string | null
   bookThumbnailUrl: string | null
+}
+
+export type BookDonateRequest = {
+  collectionPointId: number
+  bookTitle: string
+  bookAuthor: string
+  bookPublisher?: string
+  bookCategory: number
+  bookIsbn?: string
 }
 
 export type CollectionPointDetail = {
