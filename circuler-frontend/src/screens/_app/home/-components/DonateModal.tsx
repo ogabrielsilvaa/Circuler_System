@@ -45,7 +45,7 @@ export function DonateModal({ visible, onClose }: Props) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
-  const { mutate, isPending } = useDonateBook()
+  const { donateBook: donate, isPending } = useDonateBook()
 
   function resetAndClose() {
     setForm(EMPTY_FORM)
@@ -68,7 +68,7 @@ export function DonateModal({ visible, onClose }: Props) {
   function handleSubmit() {
     if (!validate()) return
     setErrorMessage(null)
-    mutate(
+    donate(
       {
         collectionPointId: form.collectionPointId!,
         bookTitle: form.bookTitle.trim(),
