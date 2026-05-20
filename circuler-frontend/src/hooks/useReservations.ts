@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createReservation, getMyReservations } from '../services/reservations.service'
 import { CreateReservationRequest, ReservationResponse } from '../types/reservation.types'
 import { ReservationStatus } from '../constants/enums'
+import { BOOK_INSTANCES_QUERY_KEY } from './useBookInstances'
+import { COLLECTION_POINTS_QUERY_KEY } from './useCollectionPoints'
 
 export const RESERVATIONS_QUERY_KEY = 'reservations'
 
@@ -42,6 +44,8 @@ export function useCreateReservation() {
     mutationFn: (payload) => createReservation(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [RESERVATIONS_QUERY_KEY] })
+      queryClient.invalidateQueries({ queryKey: [BOOK_INSTANCES_QUERY_KEY] })
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_POINTS_QUERY_KEY] })
     },
   })
 

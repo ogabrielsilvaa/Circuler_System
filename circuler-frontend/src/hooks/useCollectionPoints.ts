@@ -10,7 +10,7 @@ export function useCollectionPoints() {
   const query = useQuery<CollectionPoint[], Error, CollectionPoint[], [string]>({
     queryKey: [COLLECTION_POINTS_QUERY_KEY],
     queryFn: getCollectionPoints,
-    staleTime: 1000 * 60 * 5,
+    // staleTime: 1000 * 60 * 5,
   })
 
   return {
@@ -25,7 +25,7 @@ export function useCollectionPointDetail(id: number) {
     queryKey: [COLLECTION_POINTS_QUERY_KEY, id],
     queryFn: () => getCollectionPointDetail(id),
     enabled: !!id,
-    staleTime: 1000 * 60 * 5,
+    // staleTime: 1000 * 60 * 5,
   })
 
   return {

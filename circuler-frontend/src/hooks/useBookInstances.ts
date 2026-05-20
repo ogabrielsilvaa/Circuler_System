@@ -13,7 +13,7 @@ export function useBookInstances() {
   const query = useQuery<BookInstance[], Error, BookInstance[], [string]>({
     queryKey: [BOOK_INSTANCES_QUERY_KEY],
     queryFn: getBookInstances,
-    staleTime: 1000 * 60 * 5,
+    // staleTime: 1000 * 60 * 5,
   })
 
   return {
@@ -28,7 +28,7 @@ export function useBookInstanceSearch(title: string) {
     queryKey: [BOOK_INSTANCES_QUERY_KEY, 'search', title],
     queryFn: () => searchBookInstancesByTitle(title),
     enabled: title.trim().length > 0,
-    staleTime: 1000 * 60 * 5,
+    // staleTime: 1000 * 60 * 5,
   })
 
   return {
@@ -43,7 +43,7 @@ export function useBookInstancesByCategory(category: number | null) {
     queryKey: [BOOK_INSTANCES_QUERY_KEY, 'filter', category!],
     queryFn: () => getBookInstancesByCategory(category!),
     enabled: category !== null,
-    staleTime: 1000 * 60 * 5,
+    // staleTime: 1000 * 60 * 5,
   })
 
   return {
@@ -58,7 +58,7 @@ export function useBookInstanceById(id: number) {
     queryKey: [BOOK_INSTANCES_QUERY_KEY, id],
     queryFn: () => getBookInstanceById(id),
     enabled: !!id,
-    staleTime: 1000 * 60 * 5,
+    // staleTime: 1000 * 60 * 5,
   })
 
   return {
