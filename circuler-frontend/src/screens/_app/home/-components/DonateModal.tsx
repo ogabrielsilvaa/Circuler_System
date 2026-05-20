@@ -95,7 +95,6 @@ export function DonateModal({ visible, onClose }: Props) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1 justify-end"
       >
-        <View className="flex-1 bg-black/50" />
 
         {success ? (
           <View className="bg-emerald-800 rounded-t-3xl px-6 pt-6 pb-10 items-center gap-5">
@@ -107,7 +106,7 @@ export function DonateModal({ visible, onClose }: Props) {
             <Button label="Fechar" variant="secondary" onPress={resetAndClose} />
           </View>
         ) : (
-          <View className="bg-emerald-800 rounded-t-3xl">
+          <View className="bg-emerald-800 rounded-t-3xl overflow-hidden">
             <ScrollView
               className="px-6 pt-6"
               contentContainerStyle={{ paddingBottom: 40 }}

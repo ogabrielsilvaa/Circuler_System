@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { View, Text, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native'
 import { CollectionPointStatus } from '../../../../constants/enums'
 import { CollectionPoint } from '../../../../types/collection-point.types'
 import { useCollectionPoints } from '../../../../hooks/useCollectionPoints'
@@ -68,14 +68,20 @@ export function CollectionPointPicker({ value, onChange, error }: CollectionPoin
       {isLoading ? (
         <ActivityIndicator size="small" color="#a7f3d0" />
       ) : (
-        visiblePoints.map((point) => (
-          <PointItem
-            key={point.id}
-            point={point}
-            selected={value === point.id}
-            onPress={() => onChange(point.id)}
-          />
-        ))
+        <ScrollView
+          style={{ maxHeight: 144 }}
+          showsVerticalScrollIndicator={false}
+          nestedScrollEnabled
+        >
+          {visiblePoints.map((point) => (
+            <PointItem
+              key={point.id}
+              point={point}
+              selected={value === point.id}
+              onPress={() => onChange(point.id)}
+            />
+          ))}
+        </ScrollView>
       )}
 
       {error ? <Text className="text-red-400 text-xs mt-1">{error}</Text> : null}
