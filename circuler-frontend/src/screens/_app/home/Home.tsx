@@ -18,9 +18,9 @@ export default function Home() {
     return () => clearTimeout(timer)
   }, [searchQuery])
 
-  const { data: allInstances = [], isLoading: loadingAll } = useBookInstances()
-  const { data: searchInstances = [], isLoading: loadingSearch } = useBookInstanceSearch(debouncedQuery)
-  const { data: categoryInstances = [], isLoading: loadingCategory } = useBookInstancesByCategory(selectedCategory)
+  const { bookInstances: allInstances, isLoading: loadingAll } = useBookInstances()
+  const { bookInstances: searchInstances, isLoading: loadingSearch } = useBookInstanceSearch(debouncedQuery)
+  const { bookInstances: categoryInstances, isLoading: loadingCategory } = useBookInstancesByCategory(selectedCategory)
 
   const isSearchActive = debouncedQuery.trim().length > 0
   const instances = isSearchActive ? searchInstances
