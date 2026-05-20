@@ -1,6 +1,6 @@
-import { View, Text, FlatList, ActivityIndicator } from 'react-native'
+import { View, Text, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { MapPin } from 'lucide-react-native'
+import { ArrowLeft, MapPin } from 'lucide-react-native'
 import { useCollectionPointDetail } from '../../../hooks/useCollectionPoints'
 import { CollectionPointBookCard } from './-components/CollectionPointBookCard'
 
@@ -32,6 +32,9 @@ export default function CollectionPointDetail() {
   return (
     <View className="flex-1 bg-gray-100">
       <View className="bg-emerald-800 px-4 py-5 gap-2">
+        <TouchableOpacity onPress={() => router.back()} hitSlop={8} className="self-start mb-1">
+          <ArrowLeft size={22} color="#a7f3d0" />
+        </TouchableOpacity>
         <Text className="text-lg font-bold text-white" numberOfLines={2}>
           {detail.name}
         </Text>
