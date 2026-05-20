@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { ScrollView, View, Text, StyleSheet, ActivityIndicator } from 'react-native'
+import { ScrollView, View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native'
 import { Image } from 'expo-image'
-import { BookOpen, MapPin } from 'lucide-react-native'
-import { useLocalSearchParams } from 'expo-router'
+import { ArrowLeft, BookOpen, MapPin } from 'lucide-react-native'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { BOOK_CATEGORIES } from '../../../types/book.types'
 import { BookInstanceStatus } from '../../../constants/enums'
 import { useBookInstanceById } from '../../../hooks/useBookInstances'
@@ -11,7 +11,6 @@ import { Button } from '../../../components/Button'
 import { ReservationSuccessModal } from './-components/ReservationSuccessModal'
 import { ReservationErrorModal } from './-components/ReservationErrorModal'
 
-// StyleSheet necessário: NativeWind não resolve dimensões fixas com overflow-hidden na web
 const styles = StyleSheet.create({
   coverContainer: {
     width: '100%',
@@ -25,6 +24,7 @@ const styles = StyleSheet.create({
 
 export default function BookDetail() {
   const { id } = useLocalSearchParams<{ id: string }>()
+  const router = useRouter()
   const { bookInstance: instance, isLoading, isError } = useBookInstanceById(Number(id))
   const { createReservation, isPending } = useCreateReservation()
   const [reservationCode, setReservationCode] = useState<string | null>(null)
@@ -70,6 +70,14 @@ export default function BookDetail() {
 
   return (
     <View className="flex-1 bg-gray-100">
+      <TouchableOpacity
+        onPress={() => router.back()}
+        className="absolute top-12 left-4 z-10 bg-black/30 rounded-full p-2"
+        hitSlop={8}
+      >
+        <ArrowLeft size={20} color="#fff" />
+      </TouchableOpacity>
+
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 16 }}>
         <View style={styles.coverContainer}>
           {instance.bookThumbnailUrl ? (

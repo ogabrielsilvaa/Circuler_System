@@ -1,4 +1,5 @@
-import { Tabs, Redirect } from 'expo-router';
+import { Stack, Redirect } from 'expo-router';
+import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../src/stores/auth.store';
 import { AppHeader } from '../../src/screens/_app/-components/AppHeader';
@@ -17,17 +18,10 @@ export default function AppLayout() {
   return (
     <SafeAreaView className="flex-1 bg-emerald-600" edges={['top']}>
       <AppHeader />
-      <Tabs
-        tabBar={(props) => <AppNavbar {...props} />}
-        screenOptions={{ headerShown: false }}
-      >
-        <Tabs.Screen name="index" />
-        <Tabs.Screen name="collection-points" />
-        <Tabs.Screen name="reservations" />
-        <Tabs.Screen name="profile" />
-        <Tabs.Screen name="books/[id]" options={{ href: null }} />
-        <Tabs.Screen name="collection-points/[id]" options={{ href: null }} />
-      </Tabs>
+      <View className="flex-1">
+        <Stack screenOptions={{ headerShown: false }} />
+      </View>
+      <AppNavbar />
     </SafeAreaView>
   );
 }
