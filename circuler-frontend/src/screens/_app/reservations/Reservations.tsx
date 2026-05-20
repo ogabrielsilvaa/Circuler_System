@@ -7,7 +7,7 @@ import { ReservationDetailModal } from './-components/ReservationDetailModal'
 
 export default function Reservations() {
   const [selectedReservation, setSelectedReservation] = useState<ReservationResponse | null>(null)
-  const { data, isLoading, isError } = useMyReservations()
+  const { reservations, isLoading, isError } = useMyReservations()
 
   if (isLoading) {
     return (
@@ -26,8 +26,6 @@ export default function Reservations() {
       </View>
     )
   }
-
-  const reservations = data ?? []
 
   return (
     <View className="flex-1 bg-gray-100">

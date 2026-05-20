@@ -55,9 +55,9 @@ function PointItem({
 }
 
 export function CollectionPointPicker({ value, onChange, error }: CollectionPointPickerProps) {
-  const { data, isLoading } = useCollectionPoints()
+  const { collectionPoints, isLoading } = useCollectionPoints()
 
-  const visiblePoints = (data ?? []).filter(
+  const visiblePoints = collectionPoints.filter(
     (p) => p.status !== CollectionPointStatus.APAGADO && p.status !== CollectionPointStatus.INATIVO,
   )
 

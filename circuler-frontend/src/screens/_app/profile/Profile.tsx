@@ -14,8 +14,8 @@ export default function Profile() {
   const clearSession = useAuthStore(s => s.clearSession)
   const userId = useAuthStore(s => s.user?.id ?? 0)
 
-  const { data: user, isLoading, isError } = useUser(userId)
-  const { data: completedReservations = [], isLoading: isLoadingReservations } = useCompletedReservations()
+  const { user, isLoading, isError } = useUser(userId)
+  const { reservations: completedReservations, isLoading: isLoadingReservations } = useCompletedReservations()
 
   if (isLoading) {
     return (

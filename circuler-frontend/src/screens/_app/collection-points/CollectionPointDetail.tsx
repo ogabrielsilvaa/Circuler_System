@@ -7,7 +7,7 @@ import { CollectionPointBookCard } from './-components/CollectionPointBookCard'
 export default function CollectionPointDetail() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
-  const { data: detail, isLoading, isError } = useCollectionPointDetail(Number(id))
+  const { collectionPoint: detail, isLoading, isError } = useCollectionPointDetail(Number(id))
 
   if (isLoading) {
     return (

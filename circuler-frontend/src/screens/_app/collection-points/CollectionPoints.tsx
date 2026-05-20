@@ -5,7 +5,7 @@ import { CollectionPointCard } from './-components/CollectionPointCard'
 
 export default function CollectionPoints() {
   const router = useRouter()
-  const { data, isLoading, isError } = useCollectionPoints()
+  const { collectionPoints, isLoading, isError } = useCollectionPoints()
 
   if (isLoading) {
     return (
@@ -25,11 +25,9 @@ export default function CollectionPoints() {
     )
   }
 
-  const points = data ?? []
-
   return (
     <View className="flex-1 bg-gray-100">
-      {points.length === 0 ? (
+      {collectionPoints.length === 0 ? (
         <View className="flex-1 items-center justify-center px-6">
           <Text className="text-base text-gray-500 text-center">
             Nenhum ponto de coleta disponível.
@@ -37,7 +35,7 @@ export default function CollectionPoints() {
         </View>
       ) : (
         <FlatList
-          data={points}
+          data={collectionPoints}
           keyExtractor={(item) => String(item.id)}
           renderItem={({ item }) => (
             <CollectionPointCard
