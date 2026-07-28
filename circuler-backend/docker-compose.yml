@@ -1,4 +1,3 @@
-version: '3.8'
 name: circuler
 
 services:
@@ -7,10 +6,10 @@ services:
     container_name: circuler-mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: circuler
-      MYSQL_USER: admin
-      MYSQL_PASSWORD: adminpassword
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASS}
     ports:
       - "3307:3306"
     volumes:
