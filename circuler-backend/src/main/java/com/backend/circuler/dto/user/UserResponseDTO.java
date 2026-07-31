@@ -9,16 +9,21 @@ public class UserResponseDTO {
     private String name;
     private String email;
     private String cpf;
+    private String phone;
+    private String profilePictureUrl;
     private UserStatus status;
     private Set<String> roles;
 
     public UserResponseDTO() {}
 
-    public UserResponseDTO(Integer id, String name, String email, String cpf, UserStatus status, Set<String> roles) {
+    public UserResponseDTO(Integer id, String name, String email, String cpf, String phone,
+                           String profilePictureUrl, UserStatus status, Set<String> roles) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.cpf = cpf;
+        this.phone = phone;
+        this.profilePictureUrl = profilePictureUrl;
         this.status = status;
         this.roles = roles;
     }
@@ -34,6 +39,12 @@ public class UserResponseDTO {
 
     public String getCpf() { return cpf; }
     public void setCpf(String cpf) { this.cpf = cpf; }
+
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
+
+    public String getProfilePictureUrl() { return profilePictureUrl; }
+    public void setProfilePictureUrl(String profilePictureUrl) { this.profilePictureUrl = profilePictureUrl; }
 
     public UserStatus getStatus() { return status; }
     public void setStatus(UserStatus status) { this.status = status; }

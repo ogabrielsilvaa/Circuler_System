@@ -28,6 +28,15 @@ public class User {
     @Column(name = "cpf", unique = true)
     private String cpf;
 
+    @Column(name = "phone")
+    private String phone;
+
+    @Column(name = "profile_picture_url")
+    private String profilePictureUrl;
+
+    @Column(name = "profile_picture_public_id")
+    private String profilePicturePublicId;
+
     @Column(name = "password")
     private String password;
 
@@ -64,6 +73,15 @@ public class User {
 
     public String getCpf() { return cpf; }
     public void setCpf(String cpf) { this.cpf = cpf; }
+
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
+
+    public String getProfilePictureUrl() { return profilePictureUrl; }
+    public void setProfilePictureUrl(String profilePictureUrl) { this.profilePictureUrl = profilePictureUrl; }
+
+    public String getProfilePicturePublicId() { return profilePicturePublicId; }
+    public void setProfilePicturePublicId(String profilePicturePublicId) { this.profilePicturePublicId = profilePicturePublicId; }
 
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }

@@ -12,8 +12,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -44,6 +46,26 @@ public class UserController {
     })
     public ResponseEntity<UserResponseDTO> create(@Valid @RequestBody UserCreateDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
+    }
+
+    @PostMapping(value = "/me/profile-picture", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "Enviar foto de perfil",
+            description = "Envia uma imagem e a define como foto de perfil do usuário autenticado. "
+                    + "Substituir a foto remove automaticamente a imagem anterior do Cloudinary."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Foto de perfil atualizada com sucesso",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserResponseDTO.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Arquivo ausente ou não é uma imagem"),
+            @ApiResponse(responseCode = "404", description = "Usuário autenticado não encontrado"),
+            @ApiResponse(responseCode = "422", description = "Falha ao enviar a imagem para o serviço de armazenamento")
+    })
+    public ResponseEntity<UserResponseDTO> updateProfilePicture(@RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(service.updateProfilePicture(file));
     }
 
     @GetMapping

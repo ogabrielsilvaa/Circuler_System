@@ -16,6 +16,8 @@ public class UserCreateDTO {
     @NotBlank(message = "A senha é obrigatória")
     private String password;
 
+    private String phone;
+
     public UserCreateDTO() {}
 
     public String getName() { return name; }
@@ -29,4 +31,7 @@ public class UserCreateDTO {
 
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
+
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
 }

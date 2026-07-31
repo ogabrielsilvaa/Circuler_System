@@ -7,6 +7,7 @@ public class UserUpdateDTO {
     private String name;
     private String email;
     private String password;
+    private String phone;
 
     @Schema(
             type = "integer",
@@ -26,6 +27,9 @@ public class UserUpdateDTO {
 
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
+
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
 
     public UserStatus getStatus() { return status; }
     public void setStatus(UserStatus status) { this.status = status; }

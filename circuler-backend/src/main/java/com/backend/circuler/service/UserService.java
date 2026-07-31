@@ -14,6 +14,7 @@ import com.backend.circuler.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,15 +26,21 @@ public class UserService {
     private final UserMapper mapper;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuthorizationService authorizationService;
+    private final ImageStorageService imageStorageService;
 
     public UserService(UserRepository repository,
                        UserMapper mapper,
                        RoleRepository roleRepository,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder,
+                       AuthorizationService authorizationService,
+                       ImageStorageService imageStorageService) {
         this.repository = repository;
         this.mapper = mapper;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.authorizationService = authorizationService;
+        this.imageStorageService = imageStorageService;
     }
 
     @Transactional
@@ -99,6 +106,10 @@ public class UserService {
             existingUser.setPassword(passwordEncoder.encode(request.getPassword()));
         }
 
+        if (request.getPhone() != null && !request.getPhone().isBlank()) {
+            existingUser.setPhone(request.getPhone());
+        }
+
         if (request.getStatus() != null) {
             existingUser.setStatus(request.getStatus());
         }
@@ -113,6 +124,19 @@ public class UserService {
             throw new NotFoundException("Usuário não encontrado.");
         }
         repository.logicalDeleteById(id, UserStatus.APAGADO);
+    }
+
+    @Transactional
+    public UserResponseDTO updateProfilePicture(MultipartFile file) {
+        User currentUser = authorizationService.resolveCurrentUser();
+
+        ImageUploadResult uploaded = imageStorageService.upload(file, ImageStorageService.USERS_FOLDER);
+        imageStorageService.delete(currentUser.getProfilePicturePublicId());
+
+        currentUser.setProfilePictureUrl(uploaded.getUrl());
+        currentUser.setProfilePicturePublicId(uploaded.getPublicId());
+
+        return mapper.toDto(repository.save(currentUser));
     }
 
     @Transactional
