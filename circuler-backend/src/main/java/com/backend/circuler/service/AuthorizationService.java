@@ -8,6 +8,7 @@ import com.backend.circuler.enums.UserStatus;
 import com.backend.circuler.exception.ForbiddenException;
 import com.backend.circuler.exception.NotFoundException;
 import com.backend.circuler.repository.UserRepository;
+import com.backend.circuler.security.Roles;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
@@ -36,14 +37,14 @@ public class AuthorizationService {
     }
 
     public void assertIsRootAdmin() {
-        if (!hasRole(resolveCurrentUser(), "ROLE_ROOT_ADMIN")) {
-            throw new ForbiddenException("Apenas o administrador raiz pode executar esta ação.");
+        if (!hasRole(resolveCurrentUser(), Roles.SYSTEM_ADMIN)) {
+            throw new ForbiddenException("Apenas o administrador do sistema pode executar esta ação.");
         }
     }
 
     public void assertCanManageBookInstance(BookInstance instance) {
         User currentUser = resolveCurrentUser();
-        if (hasRole(currentUser, "ROLE_ROOT_ADMIN")) return;
+        if (hasRole(currentUser, Roles.SYSTEM_ADMIN)) return;
         if (!instance.getCollectionPoint().getUserAdmin().getEmail().equals(currentUser.getEmail())) {
             throw new ForbiddenException("Você não tem permissão para gerenciar exemplares deste ponto de coleta.");
         }
@@ -51,7 +52,7 @@ public class AuthorizationService {
 
     public void assertCanManageCollectionPoint(CollectionPoint point) {
         User currentUser = resolveCurrentUser();
-        if (hasRole(currentUser, "ROLE_ROOT_ADMIN")) return;
+        if (hasRole(currentUser, Roles.SYSTEM_ADMIN)) return;
         if (!point.getUserAdmin().getId().equals(currentUser.getId())) {
             throw new ForbiddenException("Você não é o responsável por este ponto de coleta.");
         }
@@ -59,8 +60,8 @@ public class AuthorizationService {
 
     public void assertCanReadReservation(Reservation reservation) {
         User currentUser = resolveCurrentUser();
-        if (hasRole(currentUser, "ROLE_ROOT_ADMIN")) return;
-        if (hasRole(currentUser, "ROLE_ADMIN")) {
+        if (hasRole(currentUser, Roles.SYSTEM_ADMIN)) return;
+        if (hasRole(currentUser, Roles.POINT_ADMIN)) {
             String pointAdminEmail = reservation.getBookInstance().getCollectionPoint().getUserAdmin().getEmail();
             if (currentUser.getEmail().equals(pointAdminEmail)) return;
         }

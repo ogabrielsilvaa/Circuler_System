@@ -11,6 +11,7 @@ import com.backend.circuler.exception.UnprocessableEntityException;
 import com.backend.circuler.mapper.UserMapper;
 import com.backend.circuler.repository.RoleRepository;
 import com.backend.circuler.repository.UserRepository;
+import com.backend.circuler.security.Roles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -63,10 +64,10 @@ public class UserService {
             throw new UnprocessableEntityException("Este CPF já está cadastrado.");
         }
 
-        Role userRole = roleRepository.findByName("ROLE_USER")
+        Role userRole = roleRepository.findByName(Roles.USER)
                 .orElseThrow(() -> {
-                    log.error("Role ROLE_USER ausente no banco — verifique o script de inicialização.");
-                    return new NotFoundException("Role ROLE_USER não encontrada.");
+                    log.error("Role {} ausente no banco — verifique o script de inicialização.", Roles.USER);
+                    return new NotFoundException("Role " + Roles.USER + " não encontrada.");
                 });
 
         User user = mapper.toEntity(request);
@@ -74,7 +75,7 @@ public class UserService {
         user.getRoles().add(userRole);
 
         User savedUser = repository.save(user);
-        log.info("Usuário cadastrado - id={} roles=[ROLE_USER]", savedUser.getId());
+        log.info("Usuário cadastrado - id={} roles=[{}]", savedUser.getId(), Roles.USER);
         return mapper.toDto(savedUser);
     }
 
@@ -181,23 +182,23 @@ public class UserService {
         User user = repository.findByIdAndStatusNot(id, UserStatus.APAGADO)
                 .orElseThrow(() -> new NotFoundException("Usuário não encontrado ou inativo."));
 
-        boolean isAdmin = user.getRoles().stream()
-                .anyMatch(role -> "ROLE_ADMIN".equals(role.getName()));
+        boolean isPointAdmin = user.getRoles().stream()
+                .anyMatch(role -> Roles.POINT_ADMIN.equals(role.getName()));
 
-        if (isAdmin) {
-            log.warn("Promoção rejeitada: usuário já é administrador - alvo={}", id);
+        if (isPointAdmin) {
+            log.warn("Promoção rejeitada: usuário já é administrador de ponto - alvo={}", id);
             throw new UnprocessableEntityException("Usuário já possui a role de administrador.");
         }
 
-        Role adminRole = roleRepository.findByName("ROLE_ADMIN")
+        Role pointAdminRole = roleRepository.findByName(Roles.POINT_ADMIN)
                 .orElseThrow(() -> {
-                    log.error("Role ROLE_ADMIN ausente no banco — verifique o script de inicialização.");
-                    return new NotFoundException("Role ROLE_ADMIN não encontrada.");
+                    log.error("Role {} ausente no banco — verifique o script de inicialização.", Roles.POINT_ADMIN);
+                    return new NotFoundException("Role " + Roles.POINT_ADMIN + " não encontrada.");
                 });
 
-        user.getRoles().add(adminRole);
+        user.getRoles().add(pointAdminRole);
         User updatedUser = repository.save(user);
-        log.warn("Usuário promovido a ROLE_ADMIN - ator={} alvo={}",
+        log.warn("Usuário promovido a administrador de ponto - ator={} alvo={}",
                 authorizationService.resolveCurrentUser().getId(), id);
         return mapper.toDto(updatedUser);
     }

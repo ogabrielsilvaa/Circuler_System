@@ -2,6 +2,7 @@ package com.backend.circuler.config;
 
 import com.backend.circuler.security.CustomUserDetailsService;
 import com.backend.circuler.security.JwtAuthFilter;
+import com.backend.circuler.security.Roles;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -45,25 +46,25 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
-                        .requestMatchers("/api/admin/**").hasRole("ROOT_ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/books/pending").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**").hasAuthority(Roles.SYSTEM_ADMIN)
+                        .requestMatchers(HttpMethod.GET, "/api/books/pending").hasAnyAuthority(Roles.POINT_ADMIN, Roles.SYSTEM_ADMIN)
                         .requestMatchers(HttpMethod.GET, "/api/books/**").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/api/books/**").hasRole("ROOT_ADMIN")
-                        .requestMatchers("/api/books/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/books/**").hasAuthority(Roles.SYSTEM_ADMIN)
+                        .requestMatchers("/api/books/**").hasAnyAuthority(Roles.POINT_ADMIN, Roles.SYSTEM_ADMIN)
                         .requestMatchers(HttpMethod.GET, "/api/collection-points/**").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/api/collection-points/**").hasRole("ROOT_ADMIN")
-                        .requestMatchers("/api/collection-points/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ROOT_ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/book-instances/pending").hasRole("ROOT_ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/collection-points/**").hasAuthority(Roles.SYSTEM_ADMIN)
+                        .requestMatchers("/api/collection-points/**").hasAnyAuthority(Roles.POINT_ADMIN, Roles.SYSTEM_ADMIN)
+                        .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasAuthority(Roles.SYSTEM_ADMIN)
+                        .requestMatchers(HttpMethod.GET, "/api/book-instances/pending").hasAuthority(Roles.SYSTEM_ADMIN)
                         .requestMatchers(HttpMethod.GET, "/api/book-instances/**").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/book-instances/point/**").hasRole("ROOT_ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/book-instances/point/**").hasAuthority(Roles.SYSTEM_ADMIN)
                         .requestMatchers(HttpMethod.POST, "/api/book-instances/donate").authenticated()
-                        .requestMatchers(HttpMethod.PATCH, "/api/book-instances/*/approve-donation").hasRole("ADMIN")
-                        .requestMatchers("/api/book-instances/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/reservations/all").hasRole("ROOT_ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/reservations/my-point").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/reservations/**").hasRole("ROOT_ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/reservations/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/book-instances/*/approve-donation").hasAnyAuthority(Roles.POINT_ADMIN, Roles.SYSTEM_ADMIN)
+                        .requestMatchers("/api/book-instances/**").hasAnyAuthority(Roles.POINT_ADMIN, Roles.SYSTEM_ADMIN)
+                        .requestMatchers(HttpMethod.GET, "/api/reservations/all").hasAuthority(Roles.SYSTEM_ADMIN)
+                        .requestMatchers(HttpMethod.GET, "/api/reservations/my-point").hasAnyAuthority(Roles.POINT_ADMIN, Roles.SYSTEM_ADMIN)
+                        .requestMatchers(HttpMethod.DELETE, "/api/reservations/**").hasAuthority(Roles.SYSTEM_ADMIN)
+                        .requestMatchers(HttpMethod.PATCH, "/api/reservations/**").hasAnyAuthority(Roles.POINT_ADMIN, Roles.SYSTEM_ADMIN)
                         .requestMatchers("/api/reservations/**").authenticated()
                         .anyRequest().authenticated()
                 )

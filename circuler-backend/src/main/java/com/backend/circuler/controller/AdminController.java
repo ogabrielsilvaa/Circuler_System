@@ -27,8 +27,8 @@ public class AdminController {
 
     @PostMapping("/users/{id}/promote")
     @Operation(
-            summary = "ADMIN RAIZ - Promover usuário para ADMIN",
-            description = "Adiciona ROLE_ADMIN a um usuário já cadastrado com ROLE_USER. Endpoint disponível somente para o Administrador Raiz."
+            summary = "Administrador do Sistema - Promover usuário para administrador de ponto",
+            description = "Concede a um usuário comum a role de administrador de Ponto de Coleta, habilitando-o a ser responsável por um ponto. Endpoint disponível somente para o Administrador do Sistema."
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -36,7 +36,7 @@ public class AdminController {
                     description = "Usuário promovido com sucesso",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserResponseDTO.class))
             ),
-            @ApiResponse(responseCode = "403", description = "Usuário autenticado não é o Administrador Raiz"),
+            @ApiResponse(responseCode = "403", description = "Usuário autenticado não é o Administrador do Sistema"),
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado ou inativo"),
             @ApiResponse(responseCode = "422", description = "Usuário já possui a role de administrador")
     })

@@ -141,12 +141,12 @@ public class UserController {
 
     @DeleteMapping("/{id}")
     @Operation(
-            summary = "ADMIN RAIZ - Remover Usuário",
-            description = "Realiza a exclusão lógica de um usuário, marcando-o como APAGADO. Endpoint disponível somente para o Administrador Raiz do sistema."
+            summary = "Administrador do Sistema - Remover Usuário",
+            description = "Realiza a exclusão lógica de um usuário, marcando-o como APAGADO. Endpoint disponível somente para o Administrador do Sistema."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Usuário removido com sucesso"),
-            @ApiResponse(responseCode = "403", description = "Usuário autenticado não é o Administrador Raiz"),
+            @ApiResponse(responseCode = "403", description = "Usuário autenticado não é o Administrador do Sistema"),
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
     })
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
