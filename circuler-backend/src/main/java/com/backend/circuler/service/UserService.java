@@ -11,16 +11,22 @@ import com.backend.circuler.exception.UnprocessableEntityException;
 import com.backend.circuler.mapper.UserMapper;
 import com.backend.circuler.repository.RoleRepository;
 import com.backend.circuler.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private final UserRepository repository;
     private final UserMapper mapper;
@@ -45,22 +51,30 @@ public class UserService {
 
     @Transactional
     public UserResponseDTO create(UserCreateDTO request) {
-        if (repository.findByEmail(request.getEmail()).isPresent()) {
+        Optional<User> byEmail = repository.findByEmail(request.getEmail());
+        if (byEmail.isPresent()) {
+            log.warn("Cadastro rejeitado: e-mail já em uso - conflito={}", byEmail.get().getId());
             throw new UnprocessableEntityException("Este e-mail já está em uso.");
         }
 
-        if (repository.existsByCpf(request.getCpf())) {
+        Optional<User> byCpf = repository.findByCpf(request.getCpf());
+        if (byCpf.isPresent()) {
+            log.warn("Cadastro rejeitado: CPF já cadastrado - conflito={}", byCpf.get().getId());
             throw new UnprocessableEntityException("Este CPF já está cadastrado.");
         }
 
         Role userRole = roleRepository.findByName("ROLE_USER")
-                .orElseThrow(() -> new NotFoundException("Role ROLE_USER não encontrada."));
+                .orElseThrow(() -> {
+                    log.error("Role ROLE_USER ausente no banco — verifique o script de inicialização.");
+                    return new NotFoundException("Role ROLE_USER não encontrada.");
+                });
 
         User user = mapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.getRoles().add(userRole);
 
         User savedUser = repository.save(user);
+        log.info("Usuário cadastrado - id={} roles=[ROLE_USER]", savedUser.getId());
         return mapper.toDto(savedUser);
     }
 
@@ -89,32 +103,44 @@ public class UserService {
         User existingUser = repository.findByIdAndStatusNot(id, UserStatus.APAGADO)
                 .orElseThrow(() -> new NotFoundException("Usuário não encontrado ou inativo."));
 
+        List<String> changedFields = new ArrayList<>();
+
         if (request.getName() != null && !request.getName().isBlank()) {
             existingUser.setName(request.getName());
+            changedFields.add("nome");
         }
 
         if (request.getEmail() != null && !request.getEmail().isBlank()) {
             if (!existingUser.getEmail().equals(request.getEmail())) {
-                if (repository.findByEmail(request.getEmail()).isPresent()) {
+                Optional<User> byEmail = repository.findByEmail(request.getEmail());
+                if (byEmail.isPresent()) {
+                    log.warn("Atualização rejeitada: e-mail já em uso - alvo={} conflito={}",
+                            id, byEmail.get().getId());
                     throw new UnprocessableEntityException("Este e-mail já está em uso por outro usuário.");
                 }
                 existingUser.setEmail(request.getEmail());
+                changedFields.add("email");
             }
         }
 
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             existingUser.setPassword(passwordEncoder.encode(request.getPassword()));
+            changedFields.add("senha");
         }
 
         if (request.getPhone() != null && !request.getPhone().isBlank()) {
             existingUser.setPhone(request.getPhone());
+            changedFields.add("telefone");
         }
 
         if (request.getStatus() != null) {
             existingUser.setStatus(request.getStatus());
+            changedFields.add("status");
         }
 
         User updatedUser = repository.save(existingUser);
+        log.info("Usuário atualizado - ator={} alvo={} campos={}",
+                authorizationService.resolveCurrentUser().getId(), id, changedFields);
         return mapper.toDto(updatedUser);
     }
 
@@ -124,6 +150,8 @@ public class UserService {
             throw new NotFoundException("Usuário não encontrado.");
         }
         repository.logicalDeleteById(id, UserStatus.APAGADO);
+        log.warn("Usuário apagado logicamente - ator={} alvo={}",
+                authorizationService.resolveCurrentUser().getId(), id);
     }
 
     @Transactional
@@ -131,12 +159,21 @@ public class UserService {
         User currentUser = authorizationService.resolveCurrentUser();
 
         ImageUploadResult uploaded = imageStorageService.upload(file, ImageStorageService.USERS_FOLDER);
-        imageStorageService.delete(currentUser.getProfilePicturePublicId());
+
+        String previousPublicId = currentUser.getProfilePicturePublicId();
+        try {
+            imageStorageService.delete(previousPublicId);
+        } catch (RuntimeException e) {
+            log.warn("Falha ao remover a foto de perfil anterior — asset órfão no Cloudinary - id={} publicId={}",
+                    currentUser.getId(), previousPublicId, e);
+        }
 
         currentUser.setProfilePictureUrl(uploaded.getUrl());
         currentUser.setProfilePicturePublicId(uploaded.getPublicId());
 
-        return mapper.toDto(repository.save(currentUser));
+        User savedUser = repository.save(currentUser);
+        log.info("Foto de perfil atualizada - id={} publicId={}", savedUser.getId(), uploaded.getPublicId());
+        return mapper.toDto(savedUser);
     }
 
     @Transactional
@@ -148,14 +185,20 @@ public class UserService {
                 .anyMatch(role -> "ROLE_ADMIN".equals(role.getName()));
 
         if (isAdmin) {
+            log.warn("Promoção rejeitada: usuário já é administrador - alvo={}", id);
             throw new UnprocessableEntityException("Usuário já possui a role de administrador.");
         }
 
         Role adminRole = roleRepository.findByName("ROLE_ADMIN")
-                .orElseThrow(() -> new NotFoundException("Role ROLE_ADMIN não encontrada."));
+                .orElseThrow(() -> {
+                    log.error("Role ROLE_ADMIN ausente no banco — verifique o script de inicialização.");
+                    return new NotFoundException("Role ROLE_ADMIN não encontrada.");
+                });
 
         user.getRoles().add(adminRole);
         User updatedUser = repository.save(user);
+        log.warn("Usuário promovido a ROLE_ADMIN - ator={} alvo={}",
+                authorizationService.resolveCurrentUser().getId(), id);
         return mapper.toDto(updatedUser);
     }
 }

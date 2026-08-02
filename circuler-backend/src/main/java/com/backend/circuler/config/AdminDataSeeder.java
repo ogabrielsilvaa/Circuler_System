@@ -5,6 +5,8 @@ import com.backend.circuler.entity.User;
 import com.backend.circuler.enums.UserStatus;
 import com.backend.circuler.repository.RoleRepository;
 import com.backend.circuler.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -14,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class AdminDataSeeder implements ApplicationRunner {
+
+    private static final Logger log = LoggerFactory.getLogger(AdminDataSeeder.class);
 
     @Value("${admin.email}")
     private String adminEmail;
@@ -40,16 +44,23 @@ public class AdminDataSeeder implements ApplicationRunner {
     @Transactional
     public void run(ApplicationArguments args) {
         if (userRepository.findByEmail(adminEmail).isPresent()) {
+            log.info("Admin raiz já existe — seeding ignorado.");
             return;
         }
 
         Role adminRole = roleRepository.findByName("ROLE_ADMIN")
-                .orElseThrow(() -> new IllegalStateException(
-                        "Role ROLE_ADMIN não encontrada. Verifique se o script de inicialização do banco foi executado."));
+                .orElseThrow(() -> {
+                    log.error("Role ROLE_ADMIN ausente no banco — o script de inicialização não foi executado.");
+                    return new IllegalStateException(
+                            "Role ROLE_ADMIN não encontrada. Verifique se o script de inicialização do banco foi executado.");
+                });
 
         Role rootAdminRole = roleRepository.findByName("ROLE_ROOT_ADMIN")
-                .orElseThrow(() -> new IllegalStateException(
-                        "Role ROLE_ROOT_ADMIN não encontrada. Verifique se o script de inicialização do banco foi executado."));
+                .orElseThrow(() -> {
+                    log.error("Role ROLE_ROOT_ADMIN ausente no banco — o script de inicialização não foi executado.");
+                    return new IllegalStateException(
+                            "Role ROLE_ROOT_ADMIN não encontrada. Verifique se o script de inicialização do banco foi executado.");
+                });
 
         User admin = new User();
         admin.setName("Administrador");
@@ -60,6 +71,7 @@ public class AdminDataSeeder implements ApplicationRunner {
         admin.getRoles().add(adminRole);
         admin.getRoles().add(rootAdminRole);
 
-        userRepository.save(admin);
+        User savedAdmin = userRepository.save(admin);
+        log.info("Admin raiz criado - id={} roles=[ROLE_ADMIN, ROLE_ROOT_ADMIN]", savedAdmin.getId());
     }
 }
